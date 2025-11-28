@@ -11,6 +11,7 @@ import { tutorService } from '@/application/services/tutorService';
 import { useRole } from '@/contexts/RoleContext';
 import { useToast } from '@/components/ui/use-toast';
 import { format } from 'date-fns';
+import { BookMeetingModal } from '@/components/BookMeetingModal';
 
 interface AITutorSuggestionScreenProps {
   onBack: () => void;
@@ -33,7 +34,11 @@ export function AITutorSuggestionScreen({ onBack, filters }: AITutorSuggestionSc
   const { userId } = useRole();
   const [isLoading, setIsLoading] = useState(true);
   const [suggestions, setSuggestions] = useState<SuggestionView[]>([]);
+  const [remainingSuggestions, setRemainingSuggestions] = useState<SuggestionView[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [bookingTutor, setBookingTutor] = useState<TutorProfile | null>(null);
+  const [bookingSuggestionId, setBookingSuggestionId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -63,13 +68,14 @@ export function AITutorSuggestionScreen({ onBack, filters }: AITutorSuggestionSc
       .then(async (results) => {
         if (cancelled) return;
         const enriched = await Promise.all(
-          results.slice(0, 5).map(async (suggestion) => {
+          results.slice(0, 10).map(async (suggestion) => {
             const tutor = await tutorService.getById(suggestion.tutorId);
             return { suggestion, tutor };
           }),
         );
         if (!cancelled) {
-          setSuggestions(enriched);
+          setSuggestions(enriched.slice(0, 5));
+          setRemainingSuggestions(enriched.slice(5));
           setIsLoading(false);
         }
       })
@@ -84,28 +90,68 @@ export function AITutorSuggestionScreen({ onBack, filters }: AITutorSuggestionSc
     };
   }, [filters, userId]);
 
-  const handleAccept = async (suggestionId: string) => {
-    await tutorSuggestionService.acceptSuggestion(suggestionId);
-    setSuggestions((prev) =>
-      prev.map((entry) =>
-        entry.suggestion.suggestionId === suggestionId
-          ? { ...entry, suggestion: { ...entry.suggestion, status: SuggestionStatus.ACCEPTED } }
-          : entry,
-      ),
-    );
-    toast({ title: 'Gợi ý đã được chấp nhận' });
-  };
-
   const handleReject = async (suggestionId: string) => {
     await tutorSuggestionService.rejectSuggestion(suggestionId);
-    setSuggestions((prev) =>
-      prev.map((entry) =>
-        entry.suggestion.suggestionId === suggestionId
-          ? { ...entry, suggestion: { ...entry.suggestion, status: SuggestionStatus.REJECTED } }
-          : entry,
-      ),
-    );
-    toast({ title: 'Gợi ý đã được từ chối' });
+    removeSuggestionAndFill(suggestionId);
+    toast({
+      variant: 'destructive',
+      title: 'Đã loại bỏ gia sư khỏi gợi ý',
+      description: 'Chúng tôi sẽ đề xuất gia sư khác phù hợp.',
+    });
+  };
+
+  const handleBook = (entry: SuggestionView) => {
+    if (!entry.tutor) {
+      toast({
+        variant: 'destructive',
+        title: 'Không thể mở đặt lịch',
+        description: 'Không tìm thấy thông tin chi tiết của gia sư này.',
+      });
+      return;
+    }
+    setBookingTutor(entry.tutor);
+    setBookingSuggestionId(entry.suggestion.suggestionId);
+    setShowBookingModal(true);
+  };
+
+  const handleBookingComplete = async () => {
+    const tutorName = bookingTutor?.name;
+    if (bookingSuggestionId) {
+      await tutorSuggestionService.acceptSuggestion(bookingSuggestionId);
+      removeSuggestionAndFill(bookingSuggestionId);
+      toast({
+        variant: 'success',
+        title: 'Đặt lịch thành công',
+        description: tutorName ? `Bạn đã đặt lịch với ${tutorName}.` : 'Đặt lịch thành công.',
+      });
+    }
+    handleBookingModalToggle(false);
+  };
+
+  const handleBookingModalToggle = (open: boolean) => {
+    setShowBookingModal(open);
+    if (!open) {
+      setBookingTutor(null);
+      setBookingSuggestionId(null);
+    }
+  };
+
+  const removeSuggestionAndFill = (suggestionId: string) => {
+    let replacement: SuggestionView | null = null;
+    setRemainingSuggestions((prevQueue) => {
+      if (prevQueue.length === 0) return prevQueue;
+      const [next, ...rest] = prevQueue;
+      replacement = next;
+      return rest;
+    });
+
+    setSuggestions((prev) => {
+      const filtered = prev.filter((entry) => entry.suggestion.suggestionId !== suggestionId);
+      if (replacement) {
+        return [...filtered, replacement];
+      }
+      return filtered;
+    });
   };
 
   if (isLoading) {
@@ -155,13 +201,13 @@ export function AITutorSuggestionScreen({ onBack, filters }: AITutorSuggestionSc
 
       {/* Suggested Tutors */}
       <div className="space-y-4">
-        {suggestions.map(({ tutor, suggestion }) => (
+        {suggestions.map((entry) => (
           <TutorSuggestionCard
-            key={suggestion.suggestionId}
-            tutor={tutor}
-            suggestion={suggestion}
-            onAccept={() => handleAccept(suggestion.suggestionId)}
-            onReject={() => handleReject(suggestion.suggestionId)}
+            key={entry.suggestion.suggestionId}
+            tutor={entry.tutor}
+            suggestion={entry.suggestion}
+            onBook={() => handleBook(entry)}
+            onReject={() => handleReject(entry.suggestion.suggestionId)}
           />
         ))}
       </div>
@@ -173,6 +219,15 @@ export function AITutorSuggestionScreen({ onBack, filters }: AITutorSuggestionSc
           </CardContent>
         </Card>
       )}
+
+      {bookingTutor && (
+        <BookMeetingModal
+          tutor={bookingTutor}
+          open={showBookingModal}
+          onOpenChange={handleBookingModalToggle}
+          onBookComplete={handleBookingComplete}
+        />
+      )}
     </div>
   );
 }
@@ -180,11 +235,11 @@ export function AITutorSuggestionScreen({ onBack, filters }: AITutorSuggestionSc
 interface TutorSuggestionCardProps {
   tutor?: TutorProfile;
   suggestion: TutorSuggestion;
-  onAccept: () => void;
+  onBook: () => void;
   onReject: () => void;
 }
 
-function TutorSuggestionCard({ tutor, suggestion, onAccept, onReject }: TutorSuggestionCardProps) {
+function TutorSuggestionCard({ tutor, suggestion, onBook, onReject }: TutorSuggestionCardProps) {
   return (
     <Card className="relative">
       <CardContent className="p-6">
@@ -225,16 +280,20 @@ function TutorSuggestionCard({ tutor, suggestion, onAccept, onReject }: TutorSug
                 <span className="text-sm font-medium">Next Available</span>
               </div>
               <div className="flex flex-wrap gap-2">
-                {tutor?.availability.slice(0, 3).map((slot, index) => (
-                  <Badge key={index} variant="outline" className="bg-primary/10 border-primary/20">
-                    {format(new Date(slot.date), 'MMM d')}, {slot.time}
-                  </Badge>
-                )) ?? <span className="text-xs text-muted-foreground">No schedule data</span>}
+                {tutor?.availability?.slice(0, 3)?.length ? (
+                  tutor.availability.slice(0, 3).map((slot, index) => (
+                    <Badge key={index} variant="outline" className="bg-primary/10 border-primary/20">
+                      {format(new Date(slot.date), 'MMM d')}, {slot.time}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="text-xs text-muted-foreground">No schedule data</span>
+                )}
               </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" className="flex-1" onClick={onAccept} disabled={suggestion.status !== SuggestionStatus.PENDING}>
-                Accept
+              <Button size="sm" className="flex-1" onClick={onBook} disabled={suggestion.status !== SuggestionStatus.PENDING}>
+                Book
               </Button>
               <Button variant="outline" size="sm" className="flex-1" onClick={onReject}>
                 Reject

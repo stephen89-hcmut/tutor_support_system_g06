@@ -1,144 +1,91 @@
 import type { TutorProfile } from '@/domain/entities/tutor';
+import { mockTutorAccounts } from './mockUsers';
 
-export const mockTutors: TutorProfile[] = [
-  {
-    id: 't1',
-    name: 'Dr. Nguyen Van A',
-    initials: 'DNVA',
-    department: 'Computer Science',
-    specialization: 'Computer Science',
-    rating: 4.9,
-    reviewCount: 127,
-    sessionCount: 234,
-    skills: ['Data Structures', 'Algorithms', 'System Design'],
-    meetingMode: 'Both',
-    gender: 'Male',
-    languages: ['English', 'Vietnamese'],
-    bio: '10+ years of teaching experience in computer science. Specializing in algorithms and data structures.',
-    availability: [
-      { date: '2024-11-01', time: '09:00' },
-      { date: '2024-11-01', time: '14:00' },
-      { date: '2024-11-02', time: '10:00' },
-    ],
-  },
-  {
-    id: 't2',
-    name: 'Dr. Tran Thi B',
-    initials: 'DTTB',
-    department: 'Computer Science',
-    specialization: 'Computer Science',
-    rating: 4.8,
-    reviewCount: 98,
-    sessionCount: 189,
-    skills: ['Machine Learning', 'Statistics', 'Mathematics'],
-    meetingMode: 'Online',
-    gender: 'Female',
-    languages: ['English'],
-    bio: 'Expert in machine learning and data science with extensive research background.',
-    availability: [
-      { date: '2024-11-01', time: '11:00' },
-      { date: '2024-11-02', time: '15:00' },
-      { date: '2024-11-03', time: '09:00' },
-    ],
-  },
-  {
-    id: 't3',
-    name: 'Dr. Le Van C',
-    initials: 'DLVC',
-    department: 'Computer Science',
-    specialization: 'Computer Science',
-    rating: 4.7,
-    reviewCount: 156,
-    sessionCount: 298,
-    skills: ['Database Design', 'Web Development', 'System Design'],
-    meetingMode: 'Both',
-    gender: 'Male',
-    languages: ['Vietnamese'],
-    bio: 'Full-stack developer and database expert with industry experience.',
-    availability: [
-      { date: '2024-11-01', time: '13:00' },
-      { date: '2024-11-02', time: '16:00' },
-      { date: '2024-11-03', time: '10:00' },
-    ],
-  },
-  {
-    id: 't4',
-    name: 'Prof. Pham Hoa',
-    initials: 'PPH',
-    department: 'Mathematics',
-    specialization: 'Mathematics',
-    rating: 4.6,
-    reviewCount: 89,
-    sessionCount: 167,
-    skills: ['Mathematics', 'Statistics', 'Calculus'],
-    meetingMode: 'In-Person',
-    gender: 'Female',
-    languages: ['English', 'Vietnamese'],
-    bio: 'Mathematics professor with 15 years of teaching experience.',
-    availability: [
-      { date: '2024-11-01', time: '08:00' },
-      { date: '2024-11-02', time: '14:00' },
-      { date: '2024-11-03', time: '11:00' },
-    ],
-  },
-  {
-    id: 't5',
-    name: 'Dr. Hoang Minh',
-    initials: 'DHM',
-    department: 'Computer Science',
-    specialization: 'Computer Science',
-    rating: 4.5,
-    reviewCount: 112,
-    sessionCount: 201,
-    skills: ['Mobile Development', 'Web Development', 'System Design'],
-    meetingMode: 'Online',
-    gender: 'Male',
-    languages: ['English'],
-    bio: 'Mobile app developer with expertise in React Native and Flutter.',
-    availability: [
-      { date: '2024-11-01', time: '10:00' },
-      { date: '2024-11-02', time: '13:00' },
-      { date: '2024-11-03', time: '15:00' },
-    ],
-  },
-  {
-    id: 't6',
-    name: 'Dr. Vo Thi Lan',
-    initials: 'DVTL',
-    department: 'Computer Science',
-    specialization: 'Computer Science',
-    rating: 4.4,
-    reviewCount: 76,
-    sessionCount: 145,
-    skills: ['Data Structures', 'Algorithms', 'Mathematics'],
-    meetingMode: 'Both',
-    gender: 'Female',
-    languages: ['Vietnamese'],
-    bio: 'Computer science lecturer specializing in algorithms and data structures.',
-    availability: [
-      { date: '2024-11-01', time: '15:00' },
-      { date: '2024-11-02', time: '09:00' },
-      { date: '2024-11-03', time: '14:00' },
-    ],
-  },
-  {
-    id: 't7',
-    name: 'Dr. Bui Van Dung',
-    initials: 'DBVD',
-    department: 'Computer Science',
-    specialization: 'Computer Science',
-    rating: 4.3,
-    reviewCount: 94,
-    sessionCount: 178,
-    skills: ['Machine Learning', 'Web Development', 'Database Design'],
-    meetingMode: 'Online',
-    gender: 'Male',
-    languages: ['English', 'Vietnamese'],
-    bio: 'AI and machine learning researcher with practical industry experience.',
-    availability: [
-      { date: '2024-11-01', time: '16:00' },
-      { date: '2024-11-02', time: '11:00' },
-      { date: '2024-11-03', time: '16:00' },
-    ],
-  },
-];
+// Helper to get initials from name
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 4);
+}
+
+// Generate availability slots
+function generateAvailability(): Array<{ date: string; time: string }> {
+  const slots: Array<{ date: string; time: string }> = [];
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() + 1); // Start from tomorrow
+  
+  // Generate 5-10 available slots over next 7 days
+  const numSlots = 5 + Math.floor(Math.random() * 6);
+  const times = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+  
+  for (let i = 0; i < numSlots; i++) {
+    const daysOffset = Math.floor(Math.random() * 7);
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + daysOffset);
+    const time = times[Math.floor(Math.random() * times.length)];
+    
+    slots.push({
+      date: date.toISOString().split('T')[0],
+      time,
+    });
+  }
+  
+  return slots;
+}
+
+// Generate tutor profiles from tutor accounts
+export const mockTutors: TutorProfile[] = mockTutorAccounts.map((tutor, index) => {
+  const name = `Dr. ${tutor.username.charAt(0).toUpperCase() + tutor.username.slice(1)}`;
+  const departments = ['Computer Science', 'Software Engineering', 'Information Systems', 'Mathematics', 'Data Science'];
+  const specializations = ['Computer Science', 'Software Engineering', 'Information Systems', 'Mathematics', 'Data Science', 'Cybersecurity'];
+  
+  // Generate review count and session count based on rating
+  const reviewCount = Math.floor(50 + (tutor.ratingAvg - 3.5) * 100);
+  const sessionCount = Math.floor(reviewCount * 1.5);
+  
+  // Meeting mode
+  const meetingModes: Array<'Online' | 'In-Person' | 'Both'> = ['Online', 'In-Person', 'Both'];
+  const meetingMode = meetingModes[Math.floor(Math.random() * meetingModes.length)];
+  
+  // Gender
+  const genders: Array<'Male' | 'Female' | 'Other'> = ['Male', 'Female', 'Other'];
+  const gender = genders[Math.floor(Math.random() * genders.length)];
+  
+  // Languages
+  const languageOptions: Array<'English' | 'Vietnamese' | 'Both'>[] = [
+    ['English'],
+    ['Vietnamese'],
+    ['English', 'Vietnamese'],
+    ['Both']
+  ];
+  const languages = languageOptions[Math.floor(Math.random() * languageOptions.length)] as any;
+  
+  // Bio
+  const bios = [
+    `Experienced ${tutor.isInstructor ? 'instructor' : 'tutor'} specializing in ${tutor.expertise.join(', ')}.`,
+    `Passionate educator with expertise in ${tutor.expertise[0]} and ${tutor.expertise[1]}.`,
+    `Dedicated ${tutor.isInstructor ? 'professor' : 'tutor'} helping students excel in ${tutor.expertise.join(' and ')}.`,
+    `Professional ${tutor.isInstructor ? 'instructor' : 'tutor'} with strong background in ${tutor.expertise[0]}.`,
+  ];
+  const bio = bios[Math.floor(Math.random() * bios.length)];
+  
+  return {
+    id: tutor.userId,
+    name,
+    initials: getInitials(name),
+    department: departments[Math.floor(Math.random() * departments.length)],
+    specialization: specializations[Math.floor(Math.random() * specializations.length)],
+    rating: tutor.ratingAvg,
+    reviewCount,
+    sessionCount,
+    skills: tutor.expertise,
+    meetingMode,
+    gender,
+    languages,
+    bio,
+    availability: generateAvailability(),
+  };
+});

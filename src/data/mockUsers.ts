@@ -1,368 +1,263 @@
 import { ManagerAccount, StudentAccount, TutorAccount, UserEntity } from '@/domain/entities/user';
 import { hashPassword } from '@/infrastructure/mockApi/utils/hashPassword';
 
-// Mock Users - 20 Students
-export const mockStudentAccounts: StudentAccount[] = [
+// Vietnamese first names
+const firstNames = [
+  'An', 'Anh', 'Bao', 'Binh', 'Chau', 'Cuong', 'Dang', 'Duc', 'Giang', 'Hai',
+  'Hang', 'Hieu', 'Hoang', 'Hung', 'Khanh', 'Lan', 'Linh', 'Long', 'Mai', 'Minh',
+  'Nam', 'Nga', 'Ngoc', 'Nhung', 'Phong', 'Phuong', 'Quang', 'Quy', 'Son', 'Tam',
+  'Thanh', 'Thao', 'Thi', 'Thuy', 'Tien', 'Trang', 'Trung', 'Tuan', 'Van', 'Viet',
+  'Vinh', 'Xuan', 'Yen', 'Dung', 'Hoa', 'Khoa', 'Luan', 'My', 'Nhan', 'Oanh'
+];
+
+// Vietnamese last names
+const lastNames = [
+  'Nguyen', 'Tran', 'Le', 'Pham', 'Hoang', 'Vu', 'Vo', 'Dang', 'Bui', 'Do',
+  'Ho', 'Ngo', 'Duong', 'Ly', 'Truong', 'Phan', 'Dinh', 'Ton', 'Lam', 'Cao'
+];
+
+// Majors
+const majors = [
+  'Software Engineering',
+  'Computer Science',
+  'Information Systems',
+  'Data Science',
+  'Computer Engineering',
+  'Cybersecurity',
+  'Artificial Intelligence',
+  'Network Engineering'
+];
+
+// Skills/Subjects for tutors
+const allSubjects = [
+  'Data Structures', 'Algorithms', 'System Design', 'Database Systems',
+  'Software Engineering', 'Machine Learning', 'Artificial Intelligence',
+  'Web Development', 'Mobile Development', 'Computer Networks',
+  'Cybersecurity', 'Mathematics', 'Statistics', 'Calculus',
+  'Python Programming', 'Java Programming', 'C++ Programming',
+  'JavaScript', 'React', 'Node.js', 'Object-Oriented Design',
+  'System Programming', 'Data Science', 'Big Data', 'Cloud Computing'
+];
+
+// Departments
+const departments = [
+  'Computer Science',
+  'Software Engineering',
+  'Information Systems',
+  'Mathematics',
+  'Data Science'
+];
+
+// Helper function to generate random name
+function generateName(): string {
+  const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+  const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+  return `${lastName} ${firstName}`;
+}
+
+// Helper function to generate username from name
+function generateUsername(name: string, index: number): string {
+  const parts = name.toLowerCase().split(' ');
+  const lastPart = parts[parts.length - 1];
+  const firstPart = parts[0].substring(0, 3);
+  return `${lastPart}${firstPart}${index}`;
+}
+
+const featuredStudents: StudentAccount[] = [
   {
     userId: 's1',
-    username: 'nguyenvana',
-    email: 'nguyenvana@hcmut.edu.vn',
+    username: 'sv.nguyenvana',
+    email: 'sv.nguyenvana@hcmut.edu.vn',
     passwordHash: hashPassword('student123'),
-    createdAt: '2022-09-01T00:00:00',
+    createdAt: '2023-09-01T00:00:00',
     role: 'Student',
-    studentId: '2011234',
-    enrollmentYear: 2022,
+    studentId: '20230001',
+    enrollmentYear: 2023,
     majors: 'Software Engineering',
   },
   {
     userId: 's2',
-    username: 'tranthib',
-    email: 'tranthib@hcmut.edu.vn',
+    username: 'sv.tranthib',
+    email: 'sv.tranthib@hcmut.edu.vn',
     passwordHash: hashPassword('student123'),
     createdAt: '2022-09-01T00:00:00',
     role: 'Student',
-    studentId: '2011235',
+    studentId: '20220002',
     enrollmentYear: 2022,
     majors: 'Computer Science',
   },
   {
     userId: 's3',
-    username: 'levanc',
-    email: 'levanc@hcmut.edu.vn',
+    username: 'sv.levanc',
+    email: 'sv.levanc@hcmut.edu.vn',
     passwordHash: hashPassword('student123'),
-    createdAt: '2022-09-01T00:00:00',
+    createdAt: '2021-09-01T00:00:00',
     role: 'Student',
-    studentId: '2011236',
-    enrollmentYear: 2022,
+    studentId: '20210003',
+    enrollmentYear: 2021,
     majors: 'Information Systems',
   },
   {
     userId: 's4',
-    username: 'phamthid',
-    email: 'phamthid@hcmut.edu.vn',
+    username: 'sv.phamthid',
+    email: 'sv.phamthid@hcmut.edu.vn',
     passwordHash: hashPassword('student123'),
-    createdAt: '2022-09-01T00:00:00',
+    createdAt: '2020-09-01T00:00:00',
     role: 'Student',
-    studentId: '2011237',
-    enrollmentYear: 2022,
+    studentId: '20200004',
+    enrollmentYear: 2020,
     majors: 'Data Science',
   },
   {
     userId: 's5',
-    username: 'hoangvane',
-    email: 'hoangvane@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2022-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2011238',
-    enrollmentYear: 2022,
-    majors: 'Software Engineering',
-  },
-  {
-    userId: 's6',
-    username: 'vuongthif',
-    email: 'vuongthif@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2022-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2011239',
-    enrollmentYear: 2023,
-    majors: 'Computer Science',
-  },
-  {
-    userId: 's7',
-    username: 'dangvang',
-    email: 'dangvang@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2022-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2011240',
-    enrollmentYear: 2023,
-    majors: 'Information Systems',
-  },
-  {
-    userId: 's8',
-    username: 'buthih',
-    email: 'buthih@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2022-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2011241',
-    enrollmentYear: 2023,
-    majors: 'Data Science',
-  },
-  {
-    userId: 's9',
-    username: 'ngothii',
-    email: 'ngothii@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2022-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2011242',
-    enrollmentYear: 2023,
-    majors: 'Software Engineering',
-  },
-  {
-    userId: 's10',
-    username: 'lyvanj',
-    email: 'lyvanj@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2022-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2011243',
-    enrollmentYear: 2023,
-    majors: 'Computer Science',
-  },
-  {
-    userId: 's11',
-    username: 'trinhthik',
-    email: 'trinhthik@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2021-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2010244',
-    enrollmentYear: 2021,
-    majors: 'Information Systems',
-  },
-  {
-    userId: 's12',
-    username: 'duongvanl',
-    email: 'duongvanl@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2021-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2010245',
-    enrollmentYear: 2021,
-    majors: 'Data Science',
-  },
-  {
-    userId: 's13',
-    username: 'vuthim',
-    email: 'vuthim@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2021-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2010246',
-    enrollmentYear: 2021,
-    majors: 'Software Engineering',
-  },
-  {
-    userId: 's14',
-    username: 'dothin',
-    email: 'dothin@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2021-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2010247',
-    enrollmentYear: 2021,
-    majors: 'Computer Science',
-  },
-  {
-    userId: 's15',
-    username: 'phanthio',
-    email: 'phanthio@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2021-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2010248',
-    enrollmentYear: 2021,
-    majors: 'Information Systems',
-  },
-  {
-    userId: 's16',
-    username: 'truongvanp',
-    email: 'truongvanp@hcmut.edu.vn',
+    username: 'sv.hoangvane',
+    email: 'sv.hoangvane@hcmut.edu.vn',
     passwordHash: hashPassword('student123'),
     createdAt: '2020-09-01T00:00:00',
     role: 'Student',
-    studentId: '2019250',
+    studentId: '20200005',
     enrollmentYear: 2020,
-    majors: 'Data Science',
-  },
-  {
-    userId: 's17',
-    username: 'hoangthiq',
-    email: 'hoangthiq@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2020-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2019251',
-    enrollmentYear: 2020,
-    majors: 'Software Engineering',
-  },
-  {
-    userId: 's18',
-    username: 'nguyenvanr',
-    email: 'nguyenvanr@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2020-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2019252',
-    enrollmentYear: 2020,
-    majors: 'Computer Science',
-  },
-  {
-    userId: 's19',
-    username: 'lethis',
-    email: 'lethis@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2020-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2019253',
-    enrollmentYear: 2020,
-    majors: 'Information Systems',
-  },
-  {
-    userId: 's20',
-    username: 'tranvant',
-    email: 'tranvant@hcmut.edu.vn',
-    passwordHash: hashPassword('student123'),
-    createdAt: '2020-09-01T00:00:00',
-    role: 'Student',
-    studentId: '2019254',
-    enrollmentYear: 2020,
-    majors: 'Data Science',
+    majors: 'Computer Engineering',
   },
 ];
 
-// Mock Tutors - 10 Tutors (mix of instructors and senior students)
-export const mockTutorAccounts: TutorAccount[] = [
+const randomStudentCount = 525 - featuredStudents.length;
+const generatedStudents: StudentAccount[] = Array.from({ length: randomStudentCount }, (_, i) => {
+  const index = i + featuredStudents.length + 1;
+  const name = generateName();
+  const username = generateUsername(name, index);
+  const enrollmentYear = 2020 + Math.floor(Math.random() * 5); // 2020-2024
+  const studentId = `${enrollmentYear}${String(index).padStart(4, '0')}`;
+
+  return {
+    userId: `s${index}`,
+    username,
+    email: `${username}@hcmut.edu.vn`,
+    passwordHash: hashPassword('student123'),
+    createdAt: `${enrollmentYear}-09-01T00:00:00`,
+    role: 'Student',
+    studentId,
+    enrollmentYear,
+    majors: majors[Math.floor(Math.random() * majors.length)],
+  };
+});
+
+export const mockStudentAccounts: StudentAccount[] = [...featuredStudents, ...generatedStudents];
+
+const featuredTutors: TutorAccount[] = [
   {
     userId: 't1',
-    username: 'drnguyenvana',
-    email: 'drnguyenvana@hcmut.edu.vn',
+    username: 'tutor.nguyenvana',
+    email: 'tutor.nguyenvana@hcmut.edu.vn',
     passwordHash: hashPassword('tutor123'),
-    createdAt: '2020-01-01T00:00:00',
+    createdAt: '2019-01-01T00:00:00',
     role: 'Tutor',
     tutorId: 'T001',
     expertise: ['Data Structures', 'Algorithms', 'System Design'],
     ratingAvg: 4.9,
-    isInstructor: true, // Instructor
+    isInstructor: true,
   },
   {
     userId: 't2',
-    username: 'drtranthib',
-    email: 'drtranthib@hcmut.edu.vn',
+    username: 'tutor.tranthib',
+    email: 'tutor.tranthib@hcmut.edu.vn',
     passwordHash: hashPassword('tutor123'),
-    createdAt: '2020-01-01T00:00:00',
+    createdAt: '2019-01-01T00:00:00',
     role: 'Tutor',
     tutorId: 'T002',
-    expertise: ['Database Systems', 'Software Engineering'],
-    ratingAvg: 4.8,
-    isInstructor: true, // Instructor
+    expertise: ['Database Systems', 'Software Engineering', 'Web Development'],
+    ratingAvg: 4.7,
+    isInstructor: true,
   },
   {
     userId: 't3',
-    username: 'drlevanc',
-    email: 'drlevanc@hcmut.edu.vn',
+    username: 'tutor.levanc',
+    email: 'tutor.levanc@hcmut.edu.vn',
     passwordHash: hashPassword('tutor123'),
     createdAt: '2020-01-01T00:00:00',
     role: 'Tutor',
     tutorId: 'T003',
-    expertise: ['Machine Learning', 'Artificial Intelligence'],
-    ratingAvg: 4.7,
-    isInstructor: true, // Instructor
-  },
-  {
-    userId: 't4',
-    username: 'drphamthid',
-    email: 'drphamthid@hcmut.edu.vn',
-    passwordHash: hashPassword('tutor123'),
-    createdAt: '2020-01-01T00:00:00',
-    role: 'Tutor',
-    tutorId: 'T004',
-    expertise: ['Web Development', 'Mobile Development'],
-    ratingAvg: 4.9,
-    isInstructor: true, // Instructor
-  },
-  {
-    userId: 't5',
-    username: 'drhoangvane',
-    email: 'drhoangvane@hcmut.edu.vn',
-    passwordHash: hashPassword('tutor123'),
-    createdAt: '2020-01-01T00:00:00',
-    role: 'Tutor',
-    tutorId: 'T005',
-    expertise: ['Computer Networks', 'Cybersecurity'],
-    ratingAvg: 4.6,
-    isInstructor: true, // Instructor
-  },
-  {
-    userId: 't6',
-    username: 'seniorstudent1',
-    email: 'seniorstudent1@hcmut.edu.vn',
-    passwordHash: hashPassword('tutor123'),
-    createdAt: '2021-09-01T00:00:00',
-    role: 'Tutor',
-    tutorId: 'T006',
-    expertise: ['Data Structures', 'Algorithms'],
-    ratingAvg: 4.5,
-    isInstructor: false, // Senior Student
-  },
-  {
-    userId: 't7',
-    username: 'seniorstudent2',
-    email: 'seniorstudent2@hcmut.edu.vn',
-    passwordHash: hashPassword('tutor123'),
-    createdAt: '2021-09-01T00:00:00',
-    role: 'Tutor',
-    tutorId: 'T007',
-    expertise: ['Web Development', 'JavaScript'],
-    ratingAvg: 4.4,
-    isInstructor: false, // Senior Student
-  },
-  {
-    userId: 't8',
-    username: 'seniorstudent3',
-    email: 'seniorstudent3@hcmut.edu.vn',
-    passwordHash: hashPassword('tutor123'),
-    createdAt: '2021-09-01T00:00:00',
-    role: 'Tutor',
-    tutorId: 'T008',
-    expertise: ['Python Programming', 'Data Science'],
-    ratingAvg: 4.6,
-    isInstructor: false, // Senior Student
-  },
-  {
-    userId: 't9',
-    username: 'seniorstudent4',
-    email: 'seniorstudent4@hcmut.edu.vn',
-    passwordHash: hashPassword('tutor123'),
-    createdAt: '2020-09-01T00:00:00',
-    role: 'Tutor',
-    tutorId: 'T009',
-    expertise: ['Java Programming', 'Object-Oriented Design'],
-    ratingAvg: 4.3,
-    isInstructor: false, // Senior Student
-  },
-  {
-    userId: 't10',
-    username: 'seniorstudent5',
-    email: 'seniorstudent5@hcmut.edu.vn',
-    passwordHash: hashPassword('tutor123'),
-    createdAt: '2020-09-01T00:00:00',
-    role: 'Tutor',
-    tutorId: 'T010',
-    expertise: ['C++ Programming', 'System Programming'],
-    ratingAvg: 4.5,
-    isInstructor: false, // Senior Student
+    expertise: ['Machine Learning', 'Artificial Intelligence', 'Data Science'],
+    ratingAvg: 4.8,
+    isInstructor: true,
   },
 ];
 
-// Mock Management - 1 Manager
-export const mockManagerAccounts: ManagerAccount[] = [
+const randomTutorCount = 70 - featuredTutors.length;
+const generatedTutors: TutorAccount[] = Array.from({ length: randomTutorCount }, (_, i) => {
+  const index = i + featuredTutors.length + 1;
+  const username = `tutor${index}`;
+  const isInstructor = index <= 20; // Keep first 20 as instructors
+
+  const ratingAvg = Math.round((3.5 + Math.random() * 1.5) * 10) / 10;
+
+  const numSkills = 2 + Math.floor(Math.random() * 3);
+  const expertise: string[] = [];
+  const availableSkills = [...allSubjects];
+
+  for (let j = 0; j < numSkills; j++) {
+    const skillIndex = Math.floor(Math.random() * availableSkills.length);
+    expertise.push(availableSkills[skillIndex]);
+    availableSkills.splice(skillIndex, 1);
+  }
+
+  return {
+    userId: `t${index}`,
+    username,
+    email: `${username}@hcmut.edu.vn`,
+    passwordHash: hashPassword('tutor123'),
+    createdAt: '2020-01-01T00:00:00',
+    role: 'Tutor',
+    tutorId: `T${String(index).padStart(3, '0')}`,
+    expertise,
+    ratingAvg,
+    isInstructor,
+  };
+});
+
+export const mockTutorAccounts: TutorAccount[] = [...featuredTutors, ...generatedTutors];
+
+const featuredManagers: ManagerAccount[] = [
   {
     userId: 'm1',
-    username: 'manageradmin',
-    email: 'manager@hcmut.edu.vn',
+    username: 'manager.admin',
+    email: 'manager.admin@hcmut.edu.vn',
     passwordHash: hashPassword('manager123'),
-    createdAt: '2019-01-01T00:00:00',
+    createdAt: '2018-01-01T00:00:00',
     role: 'Manager',
     managerId: 'M001',
     department: 'Computer Science',
   },
+  {
+    userId: 'm2',
+    username: 'manager.mentor',
+    email: 'manager.mentor@hcmut.edu.vn',
+    passwordHash: hashPassword('manager123'),
+    createdAt: '2018-01-01T00:00:00',
+    role: 'Manager',
+    managerId: 'M002',
+    department: 'Software Engineering',
+  },
 ];
+
+const randomManagerCount = 5 - featuredManagers.length;
+const generatedManagers: ManagerAccount[] = Array.from({ length: randomManagerCount }, (_, i) => {
+  const index = i + featuredManagers.length + 1;
+  const username = `manager${index}`;
+
+  return {
+    userId: `m${index}`,
+    username,
+    email: `${username}@hcmut.edu.vn`,
+    passwordHash: hashPassword('manager123'),
+    createdAt: '2019-01-01T00:00:00',
+    role: 'Manager',
+    managerId: `M${String(index).padStart(3, '0')}`,
+    department: departments[Math.floor(Math.random() * departments.length)],
+  };
+});
+
+export const mockManagerAccounts: ManagerAccount[] = [...featuredManagers, ...generatedManagers];
 
 // Combine all users
 export const mockUsers: UserEntity[] = [...mockStudentAccounts, ...mockTutorAccounts, ...mockManagerAccounts];
-

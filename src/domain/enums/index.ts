@@ -33,6 +33,7 @@ export enum SuggestionSource {
   ML_MODEL = 'ML_MODEL',
   RULE_BASED = 'RULE_BASED',
   HYBRID = 'HYBRID',
+  AI = 'AI',
 }
 
 export enum SuggestionStatus {
@@ -48,5 +49,6 @@ export enum NotificationType {
   FEEDBACK = 'FEEDBACK',
   SYSTEM = 'SYSTEM',
 }
+
 
 

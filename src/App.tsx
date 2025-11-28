@@ -8,7 +8,6 @@ import { StudentManagementScreen } from './screens/StudentManagementScreen';
 import { StudentDetailScreen } from './screens/StudentDetailScreen';
 import { MeetingsScreen } from './screens/MeetingsScreen';
 import { DocumentLibraryScreen } from './screens/DocumentLibraryScreen';
-import { BookMeetingScreen } from './screens/BookMeetingScreen';
 import { TutorProfileScreen } from './screens/TutorProfileScreen';
 import { AIFeedbackAnalysisScreen } from './screens/AIFeedbackAnalysisScreen';
 import { FeedbackScreen } from './screens/FeedbackScreen';
@@ -16,6 +15,7 @@ import { MyProgressScreen } from './screens/MyProgressScreen';
 import { RecordProgressScreen } from './screens/RecordProgressScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { FindTutorScreen } from './screens/FindTutorScreen';
 import type { UserEntity } from '@/domain/entities/user';
 import { meetingService } from '@/application/services/meetingService';
 import { useToast } from './components/ui/use-toast';
@@ -117,8 +117,8 @@ function App() {
     const pageMap: Record<string, string> = {
       'dashboard': 'dashboard',
       'meetings': 'meetings',
-      'book-meeting': 'book-meeting',
-      'bookmeeting': 'book-meeting',
+      'find-tutor': 'find-tutor',
+      'findtutor': 'find-tutor',
       'my-progress': 'my-progress',
       'myprogress': 'my-progress',
       'library': 'library',
@@ -229,18 +229,11 @@ function App() {
       return <DocumentLibraryScreen />;
     }
 
-    // Handle book meeting screen
-    if (currentScreen === 'book-meeting') {
-      return (
-        <BookMeetingScreen
-          onViewTutorProfile={(tutorId) => {
-            setCurrentStudentId(tutorId); // Reuse for tutor ID
-            setPreviousScreen(currentScreen);
-            setCurrentScreen('tutorProfile');
-          }}
-        />
-      );
+    // Handle find tutor screen
+    if (currentScreen === 'find-tutor') {
+      return <FindTutorScreen />;
     }
+
 
     // Handle tutor profile screen
     if (currentScreen === 'tutorProfile' && currentStudentId) {
@@ -306,7 +299,7 @@ function App() {
     // Default screen content
     const screenMap: Record<string, string> = {
       'meetings': 'Meetings',
-      'book-meeting': 'Book Meeting',
+      'find-tutor': 'Find Tutor',
       'my-progress': 'My Progress',
       'library': 'Library',
       'settings': 'Settings',

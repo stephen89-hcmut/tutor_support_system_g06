@@ -1,3 +1,5 @@
+import { toast } from '@/components/ui/use-toast';
+
 export type NotificationChannel = 'email' | 'push';
 export type NotificationStatus = 'pending' | 'sent' | 'failed';
 
@@ -63,7 +65,15 @@ export class NotificationManager {
       return true;
     }
 
-    return this.sendWithRetry(notification);
+    const success = await this.sendWithRetry(notification);
+
+    if (success) {
+      this.showToast('success', `${channel.toUpperCase()} notification sent to ${recipient}`);
+    } else {
+      this.showToast('error', `Failed to send ${channel.toUpperCase()} notification to ${recipient}`);
+    }
+
+    return success;
   }
 
   private async sendWithRetry(notification: Notification): Promise<boolean> {
@@ -96,6 +106,7 @@ export class NotificationManager {
 
     notification.status = 'failed';
     console.error(`NotificationManager: Failed to send ${notification.channel} notification after ${this.maxRetries} retries`);
+    this.showToast('error', `Notification to ${notification.recipient} permanently failed`);
     return false;
   }
 
@@ -172,6 +183,14 @@ export class NotificationManager {
 
   public clearNotifications(): void {
     this.notifications = [];
+  }
+
+  private showToast(type: 'success' | 'error', message: string) {
+    toast({
+      variant: type === 'success' ? 'success' : 'error',
+      title: type === 'success' ? 'Notification sent' : 'Notification failed',
+      description: message,
+    });
   }
 }
 
