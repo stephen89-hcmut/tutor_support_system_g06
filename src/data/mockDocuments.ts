@@ -1,0 +1,148 @@
+export type AccessLevel = 'public' | 'restricted' | 'private';
+export type DocumentType = 'Lecture Notes' | 'Assignment' | 'Study Material' | 'Research Paper' | 'Lab Manual' | 'Project Report' | 'Syllabus';
+export type FileFormat = 'PDF' | 'DOCX' | 'ZIP' | 'PPTX' | 'XLSX';
+
+export interface Document {
+  id: string;
+  title: string;
+  description: string;
+  type: DocumentType;
+  format: FileFormat;
+  size: string; // e.g., "2.4 MB"
+  downloads: number;
+  accessLevel: AccessLevel;
+  uploadedBy: string; // User ID
+  uploadedByName: string; // Display name
+  uploadDate: string; // ISO date string
+  category?: string;
+}
+
+export const mockDocuments: Document[] = [
+  {
+    id: 'doc1',
+    title: 'Data Structures and Algorithms - Lecture 1',
+    description: 'Introduction to data structures, arrays, linked lists, and basic algorithms. Covers Big O notation and complexity analysis.',
+    type: 'Lecture Notes',
+    format: 'PDF',
+    size: '2.4 MB',
+    downloads: 145,
+    accessLevel: 'public',
+    uploadedBy: 't1',
+    uploadedByName: 'Dr. Nguyen Van A',
+    uploadDate: '2024-11-01',
+    category: 'Computer Science',
+  },
+  {
+    id: 'doc2',
+    title: 'Calculus I - Assignment 3',
+    description: 'Problem set covering derivatives, integrals, and limits. Due date: Nov 15, 2025.',
+    type: 'Assignment',
+    format: 'PDF',
+    size: '856 KB',
+    downloads: 89,
+    accessLevel: 'public',
+    uploadedBy: 't2',
+    uploadedByName: 'Prof. Pham Hoa',
+    uploadDate: '2024-11-05',
+    category: 'Mathematics',
+  },
+  {
+    id: 'doc3',
+    title: 'Machine Learning Study Guide',
+    description: 'Comprehensive study guide for ML course covering supervised learning, neural networks, and deep learning fundamentals.',
+    type: 'Study Material',
+    format: 'DOCX',
+    size: '5.2 MB',
+    downloads: 234,
+    accessLevel: 'restricted',
+    uploadedBy: 't3',
+    uploadedByName: 'Dr. Nguyen Lan',
+    uploadDate: '2024-10-28',
+    category: 'Computer Science',
+  },
+  {
+    id: 'doc4',
+    title: 'Software Engineering Research Paper',
+    description: 'Research on agile methodologies and their impact on software development lifecycle.',
+    type: 'Research Paper',
+    format: 'PDF',
+    size: '3.8 MB',
+    downloads: 67,
+    accessLevel: 'public',
+    uploadedBy: 'm1',
+    uploadedByName: 'Manager Admin',
+    uploadDate: '2024-10-25',
+    category: 'Research',
+  },
+  {
+    id: 'doc5',
+    title: 'Physics II Lab Manual',
+    description: 'Complete lab manual for Physics II course including all experiments and safety guidelines.',
+    type: 'Lab Manual',
+    format: 'PDF',
+    size: '8.7 MB',
+    downloads: 178,
+    accessLevel: 'public',
+    uploadedBy: 't2',
+    uploadedByName: 'Prof. Pham Hoa',
+    uploadDate: '2024-10-20',
+    category: 'Physics',
+  },
+  {
+    id: 'doc6',
+    title: 'Database Design - Final Project',
+    description: 'Sample final project demonstrating database normalization, SQL queries, and ER diagrams.',
+    type: 'Project Report',
+    format: 'ZIP',
+    size: '12.3 MB',
+    downloads: 112,
+    accessLevel: 'restricted',
+    uploadedBy: 't1',
+    uploadedByName: 'Dr. Nguyen Van A',
+    uploadDate: '2024-10-15',
+    category: 'Computer Science',
+  },
+  {
+    id: 'doc7',
+    title: 'Web Development Course Syllabus',
+    description: 'Complete syllabus for Web Development course covering HTML, CSS, JavaScript, React, and Node.js.',
+    type: 'Syllabus',
+    format: 'PDF',
+    size: '1.2 MB',
+    downloads: 298,
+    accessLevel: 'public',
+    uploadedBy: 'm1',
+    uploadedByName: 'Manager Admin',
+    uploadDate: '2024-10-10',
+    category: 'Computer Science',
+  },
+  {
+    id: 'doc8',
+    title: 'Advanced Algorithms - Private Notes',
+    description: 'Private notes for advanced algorithm concepts. Access restricted to managers only.',
+    type: 'Lecture Notes',
+    format: 'PDF',
+    size: '4.5 MB',
+    downloads: 5,
+    accessLevel: 'private',
+    uploadedBy: 'm1',
+    uploadedByName: 'Manager Admin',
+    uploadDate: '2024-11-10',
+    category: 'Computer Science',
+  },
+  {
+    id: 'doc9',
+    title: 'System Architecture - Internal Document',
+    description: 'Internal system architecture documentation. Manager access only.',
+    type: 'Research Paper',
+    format: 'PDF',
+    size: '6.1 MB',
+    downloads: 3,
+    accessLevel: 'private',
+    uploadedBy: 'm1',
+    uploadedByName: 'Manager Admin',
+    uploadDate: '2024-11-08',
+    category: 'Research',
+  },
+];
+

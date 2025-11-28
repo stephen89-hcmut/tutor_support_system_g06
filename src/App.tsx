@@ -4,6 +4,7 @@ import { useRole } from './contexts/RoleContext';
 import { StudentManagementScreen } from './screens/StudentManagementScreen';
 import { StudentDetailScreen } from './screens/StudentDetailScreen';
 import { MeetingsScreen } from './screens/MeetingsScreen';
+import { DocumentLibraryScreen } from './screens/DocumentLibraryScreen';
 import { mockMeetings } from './data/mockMeetings';
 
 function App() {
@@ -139,6 +140,11 @@ function App() {
           onCancel={handleCancelMeeting}
         />
       );
+    }
+
+    // Handle library screen
+    if (currentScreen === 'library') {
+      return <DocumentLibraryScreen />;
     }
 
     // Default screen content
