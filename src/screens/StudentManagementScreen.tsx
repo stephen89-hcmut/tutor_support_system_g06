@@ -16,17 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { MoreVertical, Users, CheckCircle, AlertTriangle, Star } from 'lucide-react';
 import { mockStudents, Student } from '@/data/mockStudents';
 
@@ -34,16 +24,15 @@ interface StudentManagementScreenProps {
   onViewStudent: (studentId: string) => void;
   onViewProgress: (studentId: string) => void;
   onViewFeedback: (studentId: string) => void;
+  onRecordProgress: (studentId: string) => void;
 }
 
 export function StudentManagementScreen({
   onViewStudent,
   onViewProgress,
   onViewFeedback,
+  onRecordProgress,
 }: StudentManagementScreenProps) {
-  const [recordProgressStudent, setRecordProgressStudent] = useState<Student | null>(null);
-  const [progressNotes, setProgressNotes] = useState('');
-  const [progressScore, setProgressScore] = useState(0);
 
   const stats = useMemo(() => {
     const total = mockStudents.length;
@@ -54,24 +43,6 @@ export function StudentManagementScreen({
     return { total, active, atRisk, avgRating: avgRating.toFixed(1) };
   }, []);
 
-  const handleRecordProgress = (student: Student) => {
-    setRecordProgressStudent(student);
-    setProgressNotes('');
-    setProgressScore(student.progress);
-  };
-
-  const handleSaveProgress = () => {
-    if (recordProgressStudent) {
-      // In a real app, this would update the backend
-      console.log('Recording progress for', recordProgressStudent.name, {
-        score: progressScore,
-        notes: progressNotes,
-      });
-      setRecordProgressStudent(null);
-      setProgressNotes('');
-      setProgressScore(0);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -178,7 +149,7 @@ export function StudentManagementScreen({
                           View Profile
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleRecordProgress(student)}
+                          onClick={() => onRecordProgress(student.id)}
                         >
                           Record Progress
                         </DropdownMenuItem>
@@ -202,52 +173,6 @@ export function StudentManagementScreen({
         </CardContent>
       </Card>
 
-      {/* Record Progress Dialog */}
-      <Dialog
-        open={!!recordProgressStudent}
-        onOpenChange={(open) => !open && setRecordProgressStudent(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              Record Progress - {recordProgressStudent?.name}
-            </DialogTitle>
-            <DialogDescription>
-              Update the student's progress and add notes about their performance.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Progress Score (%)</label>
-              <Input
-                type="number"
-                min="0"
-                max="100"
-                value={progressScore}
-                onChange={(e) => setProgressScore(Number(e.target.value))}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Notes</label>
-              <Textarea
-                value={progressNotes}
-                onChange={(e) => setProgressNotes(e.target.value)}
-                placeholder="Enter progress notes..."
-                rows={4}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRecordProgressStudent(null)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSaveProgress}>Save Progress</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

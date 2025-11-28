@@ -8,6 +8,8 @@ import { DocumentLibraryScreen } from './screens/DocumentLibraryScreen';
 import { FindTutorScreen } from './screens/FindTutorScreen';
 import { AIFeedbackAnalysisScreen } from './screens/AIFeedbackAnalysisScreen';
 import { FeedbackScreen } from './screens/FeedbackScreen';
+import { MyProgressScreen } from './screens/MyProgressScreen';
+import { RecordProgressScreen } from './screens/RecordProgressScreen';
 import { mockMeetings } from './data/mockMeetings';
 
 function App() {
@@ -16,6 +18,8 @@ function App() {
   const [currentStudentId, setCurrentStudentId] = useState<string | null>(null);
   const [previousScreen, setPreviousScreen] = useState<string>('students');
   const [showAIFeedbackAnalysis, setShowAIFeedbackAnalysis] = useState(false);
+  const [showRecordProgress, setShowRecordProgress] = useState(false);
+  const [recordProgressStudentId, setRecordProgressStudentId] = useState<string | null>(null);
 
   const handleNavigate = (page: string) => {
     // Normalize page names to handle different variations
@@ -64,9 +68,16 @@ function App() {
   };
 
   const handleRecordProgress = (studentId: string) => {
-    // For now, just show an alert. In a real app, this would open a modal or navigate
-    console.log('Record progress for student:', studentId);
-    alert('Record Progress functionality - would open modal or navigate to record progress screen');
+    setRecordProgressStudentId(studentId);
+    setPreviousScreen(currentScreen);
+    setShowRecordProgress(true);
+  };
+
+  const handleRecordProgressSave = () => {
+    setShowRecordProgress(false);
+    setRecordProgressStudentId(null);
+    // Return to previous screen
+    setCurrentScreen(previousScreen);
   };
 
   const handleViewProgress = (studentId: string) => {
@@ -132,6 +143,7 @@ function App() {
           onViewStudent={handleViewStudent}
           onViewProgress={handleViewProgress}
           onViewFeedback={handleViewFeedback}
+          onRecordProgress={handleRecordProgress}
         />
       );
     }
@@ -170,6 +182,26 @@ function App() {
       return (
         <FeedbackScreen
           onAIAnalysis={() => setShowAIFeedbackAnalysis(true)}
+        />
+      );
+    }
+
+    // Handle my progress screen
+    if (currentScreen === 'my-progress') {
+      return <MyProgressScreen />;
+    }
+
+    // Handle record progress screen
+    if (showRecordProgress && recordProgressStudentId) {
+      return (
+        <RecordProgressScreen
+          studentId={recordProgressStudentId}
+          onBack={() => {
+            setShowRecordProgress(false);
+            setRecordProgressStudentId(null);
+            setCurrentScreen(previousScreen);
+          }}
+          onSave={handleRecordProgressSave}
         />
       );
     }
