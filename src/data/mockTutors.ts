@@ -1,0 +1,167 @@
+export type MeetingMode = 'Online' | 'In-Person' | 'Both';
+export type Gender = 'Male' | 'Female' | 'Other';
+export type Language = 'English' | 'Vietnamese' | 'Both';
+
+export interface Tutor {
+  id: string;
+  name: string;
+  initials: string;
+  department: string;
+  specialization: string;
+  rating: number;
+  reviewCount: number;
+  sessionCount: number;
+  skills: string[];
+  meetingMode: MeetingMode;
+  gender: Gender;
+  languages: Language[];
+  bio: string;
+  availability: Array<{
+    date: string;
+    time: string;
+  }>;
+  matchScore?: number; // For AI suggestions
+}
+
+export const mockTutors: Tutor[] = [
+  {
+    id: 't1',
+    name: 'Dr. Nguyen Van A',
+    initials: 'DNVA',
+    department: 'Computer Science',
+    specialization: 'Computer Science',
+    rating: 4.9,
+    reviewCount: 127,
+    sessionCount: 234,
+    skills: ['Data Structures', 'Algorithms', 'System Design'],
+    meetingMode: 'Both',
+    gender: 'Male',
+    languages: ['English', 'Vietnamese'],
+    bio: '10+ years of teaching experience in computer science. Specializing in algorithms and data structures.',
+    availability: [
+      { date: '2024-11-01', time: '09:00' },
+      { date: '2024-11-01', time: '14:00' },
+      { date: '2024-11-02', time: '10:00' },
+    ],
+  },
+  {
+    id: 't2',
+    name: 'Dr. Tran Thi B',
+    initials: 'DTTB',
+    department: 'Computer Science',
+    specialization: 'Computer Science',
+    rating: 4.8,
+    reviewCount: 98,
+    sessionCount: 189,
+    skills: ['Machine Learning', 'Statistics', 'Mathematics'],
+    meetingMode: 'Online',
+    gender: 'Female',
+    languages: ['English'],
+    bio: 'Expert in machine learning and data science with extensive research background.',
+    availability: [
+      { date: '2024-11-01', time: '11:00' },
+      { date: '2024-11-02', time: '15:00' },
+      { date: '2024-11-03', time: '09:00' },
+    ],
+  },
+  {
+    id: 't3',
+    name: 'Dr. Le Van C',
+    initials: 'DLVC',
+    department: 'Computer Science',
+    specialization: 'Computer Science',
+    rating: 4.7,
+    reviewCount: 156,
+    sessionCount: 298,
+    skills: ['Database Design', 'Web Development', 'System Design'],
+    meetingMode: 'Both',
+    gender: 'Male',
+    languages: ['Vietnamese'],
+    bio: 'Full-stack developer and database expert with industry experience.',
+    availability: [
+      { date: '2024-11-01', time: '13:00' },
+      { date: '2024-11-02', time: '16:00' },
+      { date: '2024-11-03', time: '10:00' },
+    ],
+  },
+  {
+    id: 't4',
+    name: 'Prof. Pham Hoa',
+    initials: 'PPH',
+    department: 'Mathematics',
+    specialization: 'Mathematics',
+    rating: 4.6,
+    reviewCount: 89,
+    sessionCount: 167,
+    skills: ['Mathematics', 'Statistics', 'Calculus'],
+    meetingMode: 'In-Person',
+    gender: 'Female',
+    languages: ['English', 'Vietnamese'],
+    bio: 'Mathematics professor with 15 years of teaching experience.',
+    availability: [
+      { date: '2024-11-01', time: '08:00' },
+      { date: '2024-11-02', time: '14:00' },
+      { date: '2024-11-03', time: '11:00' },
+    ],
+  },
+  {
+    id: 't5',
+    name: 'Dr. Hoang Minh',
+    initials: 'DHM',
+    department: 'Computer Science',
+    specialization: 'Computer Science',
+    rating: 4.5,
+    reviewCount: 112,
+    sessionCount: 201,
+    skills: ['Mobile Development', 'Web Development', 'System Design'],
+    meetingMode: 'Online',
+    gender: 'Male',
+    languages: ['English'],
+    bio: 'Mobile app developer with expertise in React Native and Flutter.',
+    availability: [
+      { date: '2024-11-01', time: '10:00' },
+      { date: '2024-11-02', time: '13:00' },
+      { date: '2024-11-03', time: '15:00' },
+    ],
+  },
+  {
+    id: 't6',
+    name: 'Dr. Vo Thi Lan',
+    initials: 'DVTL',
+    department: 'Computer Science',
+    specialization: 'Computer Science',
+    rating: 4.4,
+    reviewCount: 76,
+    sessionCount: 145,
+    skills: ['Data Structures', 'Algorithms', 'Mathematics'],
+    meetingMode: 'Both',
+    gender: 'Female',
+    languages: ['Vietnamese'],
+    bio: 'Computer science lecturer specializing in algorithms and data structures.',
+    availability: [
+      { date: '2024-11-01', time: '15:00' },
+      { date: '2024-11-02', time: '09:00' },
+      { date: '2024-11-03', time: '14:00' },
+    ],
+  },
+  {
+    id: 't7',
+    name: 'Dr. Bui Van Dung',
+    initials: 'DBVD',
+    department: 'Computer Science',
+    specialization: 'Computer Science',
+    rating: 4.3,
+    reviewCount: 94,
+    sessionCount: 178,
+    skills: ['Machine Learning', 'Web Development', 'Database Design'],
+    meetingMode: 'Online',
+    gender: 'Male',
+    languages: ['English', 'Vietnamese'],
+    bio: 'AI and machine learning researcher with practical industry experience.',
+    availability: [
+      { date: '2024-11-01', time: '16:00' },
+      { date: '2024-11-02', time: '11:00' },
+      { date: '2024-11-03', time: '16:00' },
+    ],
+  },
+];

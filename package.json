@@ -25,7 +25,9 @@
     "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-label": "^2.0.2",
     "react-day-picker": "^8.10.0",
-    "date-fns": "^2.30.0"
+    "date-fns": "^2.30.0",
+    "recharts": "^2.10.3",
+    "recharts": "^2.10.3"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

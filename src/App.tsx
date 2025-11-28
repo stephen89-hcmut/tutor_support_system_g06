@@ -5,6 +5,9 @@ import { StudentManagementScreen } from './screens/StudentManagementScreen';
 import { StudentDetailScreen } from './screens/StudentDetailScreen';
 import { MeetingsScreen } from './screens/MeetingsScreen';
 import { DocumentLibraryScreen } from './screens/DocumentLibraryScreen';
+import { FindTutorScreen } from './screens/FindTutorScreen';
+import { AIFeedbackAnalysisScreen } from './screens/AIFeedbackAnalysisScreen';
+import { FeedbackScreen } from './screens/FeedbackScreen';
 import { mockMeetings } from './data/mockMeetings';
 
 function App() {
@@ -12,6 +15,7 @@ function App() {
   const [currentScreen, setCurrentScreen] = useState<string>('dashboard');
   const [currentStudentId, setCurrentStudentId] = useState<string | null>(null);
   const [previousScreen, setPreviousScreen] = useState<string>('students');
+  const [showAIFeedbackAnalysis, setShowAIFeedbackAnalysis] = useState(false);
 
   const handleNavigate = (page: string) => {
     // Normalize page names to handle different variations
@@ -145,6 +149,29 @@ function App() {
     // Handle library screen
     if (currentScreen === 'library') {
       return <DocumentLibraryScreen />;
+    }
+
+    // Handle find tutors screen
+    if (currentScreen === 'find-tutors') {
+      return <FindTutorScreen />;
+    }
+
+    // Handle AI Feedback Analysis screen
+    if (showAIFeedbackAnalysis) {
+      return (
+        <AIFeedbackAnalysisScreen
+          onBack={() => setShowAIFeedbackAnalysis(false)}
+        />
+      );
+    }
+
+    // Handle feedback screen
+    if (currentScreen === 'feedback') {
+      return (
+        <FeedbackScreen
+          onAIAnalysis={() => setShowAIFeedbackAnalysis(true)}
+        />
+      );
     }
 
     // Default screen content
