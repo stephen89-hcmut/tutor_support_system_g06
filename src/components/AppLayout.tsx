@@ -60,9 +60,9 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
 };
 
 export function AppLayout({ currentScreen, onNavigate, onLogout, children }: AppLayoutProps) {
-  const { role } = useRole();
-  const menuItems = menuItemsByRole[role] || [];
-  const userProfile = getCurrentUserProfile(role);
+  const { role, userId, userName } = useRole();
+  const menuItems = role ? menuItemsByRole[role] || [] : [];
+  const userProfile = role ? getCurrentUserProfile(role) : null;
 
   const getRoleColor = () => {
     switch (role) {
@@ -78,10 +78,27 @@ export function AppLayout({ currentScreen, onNavigate, onLogout, children }: App
   };
 
   const getDisplayId = () => {
+    if (!userProfile) return userId ? `ID: ${userId}` : 'ID: N/A';
     if (userProfile.studentId) return `ID: ${userProfile.studentId}`;
     if (userProfile.tutorId) return `ID: ${userProfile.tutorId}`;
     if (userProfile.managerId) return `ID: ${userProfile.managerId}`;
     return `ID: ${userProfile.userId}`;
+  };
+
+  const getDisplayName = () => {
+    return userName || userProfile?.fullName || 'User';
+  };
+
+  const getInitials = () => {
+    if (userName) {
+      return userName
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 3);
+    }
+    return userProfile?.initials || 'U';
   };
 
   return (
@@ -95,14 +112,16 @@ export function AppLayout({ currentScreen, onNavigate, onLogout, children }: App
           <div className="mt-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg flex-shrink-0">
-                {userProfile.initials}
+                {getInitials()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{userProfile.fullName}</p>
+                <p className="font-semibold text-sm truncate">{getDisplayName()}</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <Badge className={cn('text-xs', getRoleColor())}>
-                    {role}
-                  </Badge>
+                  {role && (
+                    <Badge className={cn('text-xs', getRoleColor())}>
+                      {role}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">{getDisplayId()}</p>
               </div>

@@ -16,9 +16,11 @@ import { RecordProgressScreen } from './screens/RecordProgressScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { mockMeetings } from './data/mockMeetings';
+import { UserEntity } from './data/mockUsers';
+import { useToast } from './components/ui/use-toast';
 
 function App() {
-  const { role, setRole } = useRole();
+  const { role, setRole, setUserId, setUserName } = useRole();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<string>('dashboard');
   const [currentStudentId, setCurrentStudentId] = useState<string | null>(null);
@@ -26,42 +28,67 @@ function App() {
   const [showAIFeedbackAnalysis, setShowAIFeedbackAnalysis] = useState(false);
   const [showRecordProgress, setShowRecordProgress] = useState(false);
   const [recordProgressStudentId, setRecordProgressStudentId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Check for existing authentication on mount
   useEffect(() => {
     const token = localStorage.getItem('hcmut_auth_token') || sessionStorage.getItem('hcmut_auth_token');
-    const savedRole = localStorage.getItem('hcmut_user_role') || sessionStorage.getItem('hcmut_user_role');
+    const savedUserData = localStorage.getItem('hcmut_user_data') || sessionStorage.getItem('hcmut_user_data');
     
-    if (token && savedRole) {
-      setRole(savedRole as 'Student' | 'Tutor' | 'Manager');
-      setIsAuthenticated(true);
+    if (token && savedUserData) {
+      try {
+        const userData = JSON.parse(savedUserData);
+        const roleMapping = {
+          'Student': 'Student' as const,
+          'Tutor': 'Tutor' as const,
+          'Management': 'Manager' as const,
+        };
+        setRole(roleMapping[userData.role]);
+        setUserId(userData.userId);
+        setUserName(userData.username);
+        setIsAuthenticated(true);
+      } catch (e) {
+        // Invalid data, clear it
+        localStorage.removeItem('hcmut_auth_token');
+        localStorage.removeItem('hcmut_user_data');
+        sessionStorage.removeItem('hcmut_auth_token');
+        sessionStorage.removeItem('hcmut_user_data');
+      }
     }
-  }, [setRole]);
+  }, [setRole, setUserId, setUserName]);
 
-  const handleLogin = (loginRole: 'Student' | 'Tutor' | 'Manager') => {
-    setRole(loginRole);
+  const handleLogin = (user: UserEntity) => {
+    const roleMapping = {
+      'Student': 'Student' as const,
+      'Tutor': 'Tutor' as const,
+      'Management': 'Manager' as const,
+    };
+    setRole(roleMapping[user.role]);
+    setUserId(user.userId);
+    setUserName(user.username);
     setIsAuthenticated(true);
+    setCurrentScreen('dashboard');
   };
 
   const handleLogout = () => {
     localStorage.removeItem('hcmut_auth_token');
-    localStorage.removeItem('hcmut_user_role');
-    localStorage.removeItem('hcmut_token_data');
+    localStorage.removeItem('hcmut_user_data');
     sessionStorage.removeItem('hcmut_auth_token');
-    sessionStorage.removeItem('hcmut_user_role');
+    sessionStorage.removeItem('hcmut_user_data');
+    setRole(null);
+    setUserId(null);
+    setUserName(null);
     setIsAuthenticated(false);
     setCurrentScreen('dashboard');
+    toast({
+      title: 'Đã đăng xuất',
+      description: 'Bạn đã đăng xuất thành công.',
+    });
   };
 
   // Show login screen if not authenticated
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <LoginScreen onLogin={handleLogin} />
-        <Footer />
-      </div>
-    );
+    return <LoginScreen onLogin={handleLogin} />;
   }
 
   const handleNavigate = (page: string) => {

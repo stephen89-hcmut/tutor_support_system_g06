@@ -1,337 +1,412 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { GraduationCap, Users, Settings, BookOpen, ArrowRight, Shield } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Shield, AlertCircle, Eye, EyeOff, BookOpen, Mail, Phone, GraduationCap, Users, Settings } from 'lucide-react';
 import { useRole } from '@/contexts/RoleContext';
 import { useToast } from '@/components/ui/use-toast';
+import { authenticateUser, UserEntity } from '@/data/mockUsers';
+import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 
 interface LoginScreenProps {
-  onLogin: (role: 'Student' | 'Tutor' | 'Manager') => void;
+  onLogin: (user: UserEntity) => void;
 }
 
 export function LoginScreen({ onLogin }: LoginScreenProps) {
-  const [selectedRole, setSelectedRole] = useState<'Student' | 'Tutor' | 'Manager'>('Student');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const { setRole } = useRole();
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const { setRole, setUserId, setUserName } = useRole();
   const { toast } = useToast();
 
-  // Check for auto-login token on mount
+  // Check for auto-login on mount
   useEffect(() => {
     const savedToken = localStorage.getItem('hcmut_auth_token');
-    const savedRole = localStorage.getItem('hcmut_user_role') as 'Student' | 'Tutor' | 'Manager' | null;
+    const savedUserData = localStorage.getItem('hcmut_user_data');
     
-    if (savedToken && savedRole) {
-      // Simulate token validation
-      validateToken(savedToken).then((isValid) => {
-        if (isValid) {
-          setRole(savedRole);
-          onLogin(savedRole);
-        } else {
-          // Token invalid, clear it
-          localStorage.removeItem('hcmut_auth_token');
-          localStorage.removeItem('hcmut_user_role');
-        }
-      });
+    if (savedToken && savedUserData) {
+      try {
+        const userData = JSON.parse(savedUserData);
+        // Simulate token validation
+        setTimeout(() => {
+          setRole(userData.role === 'Management' ? 'Manager' : (userData.role === 'Student' ? 'Student' : 'Tutor'));
+          setUserId(userData.userId);
+          setUserName(userData.username);
+          onLogin(userData as UserEntity);
+          toast({
+            title: 'Auto-login successful',
+            description: `Welcome back, ${userData.username}!`,
+          });
+        }, 500);
+      } catch (e) {
+        // Invalid saved data, clear it
+        localStorage.removeItem('hcmut_auth_token');
+        localStorage.removeItem('hcmut_user_data');
+      }
     }
-  }, [setRole, onLogin]);
-
-  const validateToken = async (token: string): Promise<boolean> => {
-    // Simulate token validation with HCMUT SSO
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // In real app, this would call HCMUT SSO API
-        // For now, just check if token exists and is not expired
-        const tokenData = localStorage.getItem('hcmut_token_data');
-        if (tokenData) {
-          try {
-            const data = JSON.parse(tokenData);
-            const now = new Date().getTime();
-            // Check if token is not expired (24 hours)
-            if (data.expiresAt && now < data.expiresAt) {
-              resolve(true);
-              return;
-            }
-          } catch (e) {
-            // Invalid token data
-          }
-        }
-        resolve(false);
-      }, 500);
-    });
-  };
+  }, [setRole, setUserId, setUserName, onLogin, toast]);
 
   const handleSignIn = async () => {
+    // Clear previous errors
+    setLoginError(null);
+
+    // Validation
+    if (!username.trim()) {
+      setLoginError('Vui lòng nhập tên đăng nhập.');
+      return;
+    }
+
+    if (!password.trim()) {
+      setLoginError('Vui lòng nhập mật khẩu.');
+      return;
+    }
+
+    setIsAuthenticating(true);
+
     try {
-      // Simulate SSO authentication
-      toast({
-        title: 'Connecting to HCMUT SSO...',
-        description: 'Please wait while we authenticate your credentials.',
-      });
+      // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Simulate API call to HCMUT SSO
-      // In real app, this would be: await fetch('https://sso.hcmut.edu.vn/api/auth', {...})
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // Simulate 90% success rate
-          if (Math.random() > 0.1) {
-            resolve(true);
-          } else {
-            // Simulate SSO server error
-            reject(new Error('SSO_SERVER_ERROR'));
-          }
-        }, 1500);
-      });
+      // Authenticate user from mock data
+      const user = authenticateUser(username.trim(), password);
 
-      // Simulate successful authentication
-      const token = `hcmut_token_${Date.now()}`;
-      const tokenData = {
-        token,
-        role: selectedRole,
-        expiresAt: rememberMe ? new Date().getTime() + 30 * 24 * 60 * 60 * 1000 : new Date().getTime() + 24 * 60 * 60 * 1000, // 30 days if remember me, 1 day otherwise
+      if (!user) {
+        setLoginError('Sai tên đăng nhập hoặc mật khẩu.');
+        setIsAuthenticating(false);
+        return;
+      }
+
+      // Authentication successful
+      const token = `hcmut_token_${Date.now()}_${user.userId}`;
+      const userData = {
+        userId: user.userId,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        ...(user.role === 'Student' && {
+          studentId: (user as any).studentId,
+          enrollmentYear: (user as any).enrollmentYear,
+          majors: (user as any).majors,
+        }),
+        ...(user.role === 'Tutor' && {
+          tutorId: (user as any).tutorId,
+          expertise: (user as any).expertise,
+          ratingAvg: (user as any).ratingAvg,
+          isInstructor: (user as any).isInstructor,
+        }),
+        ...(user.role === 'Management' && {
+          managerId: (user as any).managerId,
+          department: (user as any).department,
+        }),
       };
 
-      // Save token if remember me is checked
+      // Save token and user data
       if (rememberMe) {
         localStorage.setItem('hcmut_auth_token', token);
-        localStorage.setItem('hcmut_user_role', selectedRole);
-        localStorage.setItem('hcmut_token_data', JSON.stringify(tokenData));
+        localStorage.setItem('hcmut_user_data', JSON.stringify(userData));
       } else {
-        // Store in sessionStorage for current session only
         sessionStorage.setItem('hcmut_auth_token', token);
-        sessionStorage.setItem('hcmut_user_role', selectedRole);
+        sessionStorage.setItem('hcmut_user_data', JSON.stringify(userData));
       }
 
-      setRole(selectedRole);
-      onLogin(selectedRole);
+      // Set role context
+      const roleMapping = {
+        'Student': 'Student' as const,
+        'Tutor': 'Tutor' as const,
+        'Management': 'Manager' as const,
+      };
+      setRole(roleMapping[user.role]);
+      setUserId(user.userId);
+      setUserName(user.username);
+
+      // Call onLogin with user data
+      onLogin(user);
 
       toast({
-        title: 'Login Successful',
-        description: `Welcome back! You are logged in as ${selectedRole}.`,
+        title: 'Đăng nhập thành công',
+        description: `Chào mừng, ${user.username}!`,
       });
     } catch (error: any) {
-      // Handle different error types
-      if (error?.message === 'SSO_SERVER_ERROR') {
-        toast({
-          variant: 'error',
-          title: 'Connection Error',
-          description: 'Cannot connect to SSO server. Please try again later.',
-        });
-      } else {
-        toast({
-          variant: 'error',
-          title: 'Authentication Error',
-          description: 'Incorrect username or password. Please try again.',
-        });
-      }
+      setLoginError('Không thể kết nối đến máy chủ SSO. Vui lòng thử lại sau.');
+      setIsAuthenticating(false);
     }
   };
 
   const handleCancel = () => {
-    // Return to homepage (in this case, just stay on login page)
-    toast({
-      title: 'Login Cancelled',
-      description: 'You can try again when ready.',
-    });
+    setUsername('');
+    setPassword('');
+    setLoginError(null);
   };
 
-  const roles = [
-    {
-      id: 'Student' as const,
-      icon: GraduationCap,
-      title: 'Student',
-      description: 'Book meetings, view progress, access learning materials',
-      color: 'bg-blue-500',
-      selectedColor: 'border-blue-500 bg-blue-50',
-    },
-    {
-      id: 'Tutor' as const,
-      icon: Users,
-      title: 'Tutor',
-      description: 'Manage students, record progress, respond to feedback',
-      color: 'bg-green-500',
-      selectedColor: 'border-green-500 bg-green-50',
-    },
-    {
-      id: 'Manager' as const,
-      icon: Settings,
-      title: 'Manager',
-      description: 'Access control, analytics, manage permissions',
-      color: 'bg-orange-500',
-      selectedColor: 'border-orange-500 bg-orange-50',
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
+    <div className="min-h-screen flex flex-col bg-white">
+      <Header />
+
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-4xl space-y-8">
-          {/* Main Login Card */}
-          <Card className="shadow-lg">
+      <div className="flex-1 flex items-center justify-center px-4 py-8 bg-gradient-to-b from-blue-50/50 to-white">
+        <div className="w-full max-w-5xl">
+          {/* System Title Section */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
+                <BookOpen className="h-12 w-12 text-white" />
+              </div>
+            </div>
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">Tutor Support System</h1>
+            <p className="text-lg text-gray-600">HCMUT - Ho Chi Minh City University of Technology</p>
+          </div>
+
+          {/* Login Card */}
+          <Card className="shadow-2xl border-0 max-w-2xl mx-auto">
             <CardContent className="p-8">
-              {/* System Title */}
-              <div className="text-center mb-8">
-                <div className="flex items-center justify-center gap-3 mb-3">
-                  <BookOpen className="h-8 w-8 text-primary" />
-                  <h1 className="text-3xl font-bold text-primary">Tutor Support System</h1>
-                </div>
-                <p className="text-muted-foreground">
-                  HCMUT - Ho Chi Minh City University of Technology
-                </p>
-              </div>
-
-              {/* Role Selection */}
+              {/* Header */}
               <div className="mb-8">
-                <h2 className="text-xl font-semibold mb-4">Select Your Role</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {roles.map((role) => {
-                    const Icon = role.icon;
-                    const isSelected = selectedRole === role.id;
-                    return (
-                      <button
-                        key={role.id}
-                        onClick={() => setSelectedRole(role.id)}
-                        className={`p-4 rounded-lg border-2 transition-all text-left ${
-                          isSelected
-                            ? `${role.selectedColor} border-2`
-                            : 'border-gray-200 hover:border-gray-300 bg-white'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          {isSelected && (
-                            <div className={`w-2 h-2 rounded-full ${role.color} mt-1.5`} />
-                          )}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Icon
-                                className={`h-5 w-5 ${
-                                  isSelected
-                                    ? role.id === 'Student'
-                                      ? 'text-blue-600'
-                                      : role.id === 'Tutor'
-                                      ? 'text-green-600'
-                                      : 'text-orange-600'
-                                    : 'text-gray-400'
-                                }`}
-                              />
-                              <h3 className="font-semibold">{role.title}</h3>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{role.description}</p>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* SSO Sign In Section */}
-              <div className="bg-primary/10 border border-primary/20 rounded-lg p-6 mb-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                    <Shield className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold mb-1">Secure Sign In with HCMUT SSO</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Use your HCMUT credentials to access the system securely. Your data is protected.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sign In Button */}
-              <Button
-                onClick={handleSignIn}
-                className="w-full bg-primary hover:bg-primary-dark text-white mb-4"
-                size="lg"
-              >
-                Sign In with HCMUT SSO as {selectedRole}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-
-              {/* Remember Me */}
-              <div className="flex items-center gap-2 mb-4">
-                <Checkbox
-                  id="remember"
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                />
-                <label
-                  htmlFor="remember"
-                  className="text-sm text-muted-foreground cursor-pointer"
-                >
-                  Remember me on this device
-                </label>
-              </div>
-
-              {/* Cancel Button */}
-              <div className="text-center">
-                <Button variant="ghost" onClick={handleCancel} size="sm">
-                  Cancel
-                </Button>
-              </div>
-
-              {/* Copyright and Support */}
-              <div className="mt-6 pt-6 border-t text-center space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  © 2025 Ho Chi Minh City University of Technology
+                <h2 className="text-2xl font-bold text-red-600 mb-2">
+                  Nhập thông tin tài khoản của bạn
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Đăng nhập bằng tài khoản HCMUT của bạn
                 </p>
-                <a href="#" className="text-xs text-primary hover:underline">
-                  Need help? Contact support
-                </a>
+              </div>
+
+              {/* Error Alert */}
+              {loginError && (
+                <Alert variant="destructive" className="mb-6">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{loginError}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Login Form */}
+              <div className="space-y-6">
+                {/* Username Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-sm font-medium">
+                    Tên tài khoản
+                  </Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Nhập tên đăng nhập"
+                    value={username}
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      setLoginError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSignIn();
+                      }
+                    }}
+                    disabled={isAuthenticating}
+                    className="h-12 text-base"
+                  />
+                </div>
+
+                {/* Password Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-medium">
+                    Mật khẩu
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Nhập mật khẩu"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setLoginError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleSignIn();
+                        }
+                      }}
+                      disabled={isAuthenticating}
+                      className="h-12 pr-12 text-base"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Warning Checkbox */}
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="warning"
+                    defaultChecked
+                    className="data-[state=checked]:bg-primary"
+                  />
+                  <Label
+                    htmlFor="warning"
+                    className="text-sm text-muted-foreground cursor-pointer"
+                  >
+                    Cảnh báo trước khi tôi đăng nhập vào các trang web khác.
+                  </Label>
+                </div>
+
+                {/* SSO Sign In Section */}
+                <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Shield className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-sm mb-1">Secure Sign In with HCMUT SSO</h3>
+                      <p className="text-xs text-muted-foreground">
+                        Use your HCMUT credentials to access the system securely. Your data is protected.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleSignIn}
+                    disabled={isAuthenticating || !username.trim() || !password.trim()}
+                    className="flex-1 bg-primary hover:bg-primary-dark h-12 text-base font-semibold"
+                    size="lg"
+                  >
+                    {isAuthenticating ? (
+                      <>
+                        <Shield className="mr-2 h-5 w-5 animate-pulse" />
+                        Đang xác thực...
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="mr-2 h-5 w-5" />
+                        Đăng nhập
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleCancel}
+                    variant="outline"
+                    disabled={isAuthenticating}
+                    className="h-12 px-6 text-base"
+                    size="lg"
+                  >
+                    Xóa
+                  </Button>
+                </div>
+
+                {/* Remember Me */}
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                    className="data-[state=checked]:bg-primary"
+                  />
+                  <Label
+                    htmlFor="remember"
+                    className="text-sm text-muted-foreground cursor-pointer"
+                  >
+                    Remember me on this device
+                  </Label>
+                </div>
+
+                {/* Change Password Link */}
+                <div className="text-center pt-2">
+                  <a
+                    href="#"
+                    className="text-sm text-primary hover:underline font-medium"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toast({
+                        title: 'Thay đổi mật khẩu',
+                        description: 'Vui lòng liên hệ bộ phận IT để thay đổi mật khẩu.',
+                      });
+                    }}
+                  >
+                    Thay đổi mật khẩu?
+                  </a>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Role Permissions Overview */}
-          <Card className="shadow-lg">
+          {/* Additional Information Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 max-w-5xl mx-auto">
+            {/* Language Selector */}
+            <Card className="shadow-lg border-0">
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-4 text-sm">Ngôn ngữ</h3>
+                <div className="flex gap-4">
+                  <button className="text-primary font-medium border-b-2 border-primary pb-1 text-sm">
+                    Tiếng Việt
+                  </button>
+                  <button className="text-muted-foreground hover:text-foreground text-sm">
+                    Tiếng Anh
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Notice Section */}
+            <Card className="shadow-lg border-0 md:col-span-2">
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-4 text-sm">Lưu ý</h3>
+                <div className="space-y-2 text-xs text-muted-foreground">
+                  <p>
+                    Trang đăng nhập này cho phép bạn đăng nhập một lần (Single Sign-On) để truy cập
+                    nhiều hệ thống web của Trường Đại học Bách khoa - ĐHQG TP.HCM.
+                  </p>
+                  <p>
+                    <strong className="text-foreground">Lưu ý bảo mật:</strong> Sau khi sử dụng
+                    xong các dịch vụ yêu cầu xác thực, vui lòng đăng xuất khỏi trình duyệt web để
+                    bảo vệ thông tin tài khoản của bạn.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Technical Support */}
+          <Card className="shadow-lg border-0 mt-6 max-w-5xl mx-auto">
             <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Role Permissions Overview</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-3 h-3 rounded-full bg-blue-500" />
-                    <h3 className="font-semibold">Student</h3>
-                  </div>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>• Book & manage meetings</li>
-                    <li>• View progress reports</li>
-                    <li>• Access learning materials</li>
-                    <li>• AI tutor suggestions</li>
-                  </ul>
+              <h3 className="font-semibold mb-4 text-sm">Hỗ trợ kỹ thuật</h3>
+              <div className="flex flex-wrap gap-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <a
+                    href="mailto:support@hcmut.edu.vn"
+                    className="text-primary hover:underline"
+                  >
+                    support@hcmut.edu.vn
+                  </a>
                 </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-3 h-3 rounded-full bg-green-500" />
-                    <h3 className="font-semibold">Tutor</h3>
-                  </div>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>• Manage students</li>
-                    <li>• Record progress</li>
-                    <li>• Respond to feedback</li>
-                    <li>• Share materials</li>
-                  </ul>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                    <h3 className="font-semibold">Manager</h3>
-                  </div>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>• Access control</li>
-                    <li>• Generate reports</li>
-                    <li>• Manage permissions</li>
-                    <li>• Monitor activities</li>
-                  </ul>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">
+                    ĐT: (84-8) 38647256 - 7204
+                  </span>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }
-
