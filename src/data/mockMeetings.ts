@@ -1,24 +1,4 @@
-export type MeetingStatus = 'Scheduled' | 'Completed' | 'Cancelled';
-export type MeetingMode = 'Zoom' | 'Teams' | 'In-Person';
-export type CancelledBy = 'Student' | 'Tutor' | 'System';
-
-export interface Meeting {
-  id: string;
-  date: string; // ISO date string
-  time: string; // HH:mm format
-  studentId: string;
-  studentName: string;
-  tutorId: string;
-  tutorName: string;
-  topic: string;
-  mode: MeetingMode;
-  location?: string; // For in-person meetings
-  link?: string; // For online meetings
-  status: MeetingStatus;
-  cancelledBy?: CancelledBy;
-  cancellationReason?: string;
-  notes?: string;
-}
+import type { Meeting } from '@/domain/entities/meeting';
 
 export const mockMeetings: Meeting[] = [
   {

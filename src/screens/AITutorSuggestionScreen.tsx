@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Clock, Sparkles } from 'lucide-react';
-import { mockTutors, Tutor } from '@/data/mockTutors';
+import type { TutorProfile } from '@/domain/entities/tutor';
+import { aiService } from '@/application/services/aiService';
 import { format } from 'date-fns';
 
 interface AITutorSuggestionScreenProps {
@@ -20,64 +21,40 @@ interface AITutorSuggestionScreenProps {
 
 export function AITutorSuggestionScreen({ onBack, filters }: AITutorSuggestionScreenProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const [suggestedTutors, setSuggestedTutors] = useState<Tutor[]>([]);
+  const [suggestedTutors, setSuggestedTutors] = useState<TutorProfile[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate AI processing
-    const timer = setTimeout(() => {
-      // Calculate match scores for tutors
-      const tutorsWithScores = mockTutors.map(tutor => {
-        let matchScore = 50; // Base score
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+    const mappedMode =
+      filters.meetingMode === 'online'
+        ? 'Online'
+        : filters.meetingMode === 'in-person'
+        ? 'In-Person'
+        : undefined;
 
-        // Department match
-        if (filters.department && filters.department !== 'all' && tutor.department === filters.department) {
-          matchScore += 15;
-        }
-
-        // Skills match
-        if (filters.skills && filters.skills.length > 0) {
-          const matchingSkills = filters.skills.filter(skill => tutor.skills.includes(skill)).length;
-          matchScore += matchingSkills * 10;
-        }
-
-        // Rating match
-        if (filters.minRating && filters.minRating !== 'all') {
-          const minRatingValue = parseFloat(filters.minRating);
-          if (tutor.rating >= minRatingValue) {
-            matchScore += 10;
-          }
-        }
-
-        // Meeting mode match
-        if (filters.meetingMode && filters.meetingMode !== 'all') {
-          if (tutor.meetingMode === filters.meetingMode || tutor.meetingMode === 'Both') {
-            matchScore += 5;
-          }
-        }
-
-        // Language match
-        if (filters.language && filters.language !== 'all') {
-          if (tutor.languages.includes(filters.language as any) || tutor.languages.includes('Both')) {
-            matchScore += 5;
-          }
-        }
-
-        // Rating boost
-        matchScore += tutor.rating * 2;
-
-        // Session count boost (experience)
-        matchScore += Math.min(tutor.sessionCount / 10, 5);
-
-        return { ...tutor, matchScore: Math.min(Math.round(matchScore), 100) };
+    aiService
+      .getTutorSuggestions({
+        department: filters.department && filters.department !== 'all' ? filters.department : undefined,
+        preferredSkills: filters.skills && filters.skills.length > 0 ? filters.skills : undefined,
+        meetingMode: mappedMode,
+      })
+      .then((results) => {
+        if (cancelled) return;
+        setSuggestedTutors(results.slice(0, 5));
+        setIsLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setError('Không thể tạo gợi ý AI lúc này.');
+        setIsLoading(false);
       });
 
-      // Sort by match score and take top 5
-      const sorted = tutorsWithScores.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
-      setSuggestedTutors(sorted.slice(0, 5));
-      setIsLoading(false);
-    }, 1500); // Simulate 1.5s AI processing
-
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+    };
   }, [filters]);
 
   if (isLoading) {
@@ -87,6 +64,17 @@ export function AITutorSuggestionScreen({ onBack, filters }: AITutorSuggestionSc
           <Sparkles className="h-12 w-12 text-primary" />
         </div>
         <p className="text-muted-foreground">AI is analyzing your preferences...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        {error}
+        <div className="mt-4">
+          <Button onClick={onBack}>Go Back</Button>
+        </div>
       </div>
     );
   }
@@ -133,7 +121,7 @@ export function AITutorSuggestionScreen({ onBack, filters }: AITutorSuggestionSc
 }
 
 interface TutorSuggestionCardProps {
-  tutor: Tutor;
+  tutor: TutorProfile;
 }
 
 function TutorSuggestionCard({ tutor }: TutorSuggestionCardProps) {

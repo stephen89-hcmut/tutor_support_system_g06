@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +28,8 @@ import {
   Download,
   Reply,
 } from 'lucide-react';
-import { mockStudents, Student } from '@/data/mockStudents';
+import type { StudentProfile } from '@/domain/entities/student';
+import { studentService } from '@/application/services/studentService';
 
 interface StudentDetailScreenProps {
   studentId: string;
@@ -47,7 +48,9 @@ export function StudentDetailScreen({
   onViewAllFeedback,
   onExport,
 }: StudentDetailScreenProps) {
-  const student = mockStudents.find(s => s.id === studentId);
+  const [student, setStudent] = useState<StudentProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState<{
     id: string;
@@ -55,10 +58,43 @@ export function StudentDetailScreen({
   } | null>(null);
   const [replyText, setReplyText] = useState('');
 
-  if (!student) {
+  useEffect(() => {
+    let mounted = true;
+    const loadStudent = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await studentService.getById(studentId);
+        if (!mounted) return;
+        setStudent(data ?? null);
+      } catch (err) {
+        if (!mounted) return;
+        setError('Không thể tải thông tin sinh viên.');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadStudent();
+    return () => {
+      mounted = false;
+    };
+  }, [studentId]);
+
+  if (loading) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        Đang tải thông tin sinh viên...
+      </div>
+    );
+  }
+
+  if (error || !student) {
     return (
       <div className="text-center py-8">
-        <p className="text-muted-foreground">Student not found</p>
+        <p className="text-muted-foreground">{error || 'Student not found'}</p>
         <Button onClick={onBack} className="mt-4">
           Go Back
         </Button>
@@ -73,17 +109,15 @@ export function StudentDetailScreen({
   };
 
   const handleSaveReply = () => {
-    if (selectedFeedback) {
+    if (selectedFeedback && student) {
       // In a real app, this would update the backend
       console.log('Saving reply for feedback', selectedFeedback.id, replyText);
-      // Update the feedback status to 'Responded'
-      const feedbackIndex = student.feedback.findIndex(
-        f => f.id === selectedFeedback.id
-      );
-      if (feedbackIndex !== -1) {
-        student.feedback[feedbackIndex].status = 'Responded';
-        student.feedback[feedbackIndex].response = replyText;
-      }
+      setStudent({
+        ...student,
+        feedback: student.feedback.map((f) =>
+          f.id === selectedFeedback.id ? { ...f, status: 'Responded', response: replyText } : f,
+        ),
+      });
       setReplyDialogOpen(false);
       setSelectedFeedback(null);
       setReplyText('');

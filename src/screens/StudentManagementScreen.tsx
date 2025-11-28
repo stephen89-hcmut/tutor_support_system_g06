@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -18,7 +18,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { MoreVertical, Users, CheckCircle, AlertTriangle, Star } from 'lucide-react';
-import { mockStudents, Student } from '@/data/mockStudents';
+import type { StudentProfile } from '@/domain/entities/student';
+import { studentService } from '@/application/services/studentService';
+import { useAsyncData } from '@/hooks/useAsyncData';
 
 interface StudentManagementScreenProps {
   onViewStudent: (studentId: string) => void;
@@ -33,15 +35,30 @@ export function StudentManagementScreen({
   onViewFeedback,
   onRecordProgress,
 }: StudentManagementScreenProps) {
-
+  const { data, loading, error } = useAsyncData<StudentProfile[]>(() => studentService.list(), []);
+  const students = data ?? [];
   const stats = useMemo(() => {
-    const total = mockStudents.length;
-    const active = mockStudents.filter(s => s.status === 'Active').length;
-    const atRisk = mockStudents.filter(s => s.status === 'At Risk').length;
-    const avgRating = mockStudents.reduce((sum, s) => sum + s.rating, 0) / total;
-
+    if (!students.length) {
+      return { total: 0, active: 0, atRisk: 0, avgRating: '0.0' };
+    }
+    const total = students.length;
+    const active = students.filter((s) => s.status === 'Active').length;
+    const atRisk = students.filter((s) => s.status === 'At Risk').length;
+    const avgRating = students.reduce((sum, s) => sum + s.rating, 0) / total;
     return { total, active, atRisk, avgRating: avgRating.toFixed(1) };
-  }, []);
+  }, [students]);
+
+  if (loading && students.length === 0) {
+    return <div className="p-6 text-center text-muted-foreground">Đang tải danh sách sinh viên...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        Không thể tải danh sách sinh viên. Vui lòng thử lại sau.
+      </div>
+    );
+  }
 
 
   return (
@@ -112,7 +129,7 @@ export function StudentManagementScreen({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockStudents.map((student) => (
+              {students.map((student) => (
                 <TableRow key={student.id}>
                   <TableCell className="font-medium">{student.name}</TableCell>
                   <TableCell>{student.studentId}</TableCell>

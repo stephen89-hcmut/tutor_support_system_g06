@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRole } from '@/contexts/RoleContext';
 import { 
   LayoutDashboard, 
@@ -16,7 +16,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { getCurrentUserProfile } from '@/data/mockUserProfile';
+import type { UserProfile } from '@/domain/entities/profile';
+import { profileService } from '@/application/services/profileService';
 
 interface AppLayoutProps {
   currentScreen: string;
@@ -62,7 +63,30 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
 export function AppLayout({ currentScreen, onNavigate, onLogout, children }: AppLayoutProps) {
   const { role, userId, userName } = useRole();
   const menuItems = role ? menuItemsByRole[role] || [] : [];
-  const userProfile = role ? getCurrentUserProfile(role) : null;
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadProfile = async () => {
+      if (!role) {
+        setUserProfile(null);
+        return;
+      }
+      try {
+        const profile = await profileService.getProfileByRole(role);
+        if (!mounted) return;
+        setUserProfile(profile);
+      } catch (err) {
+        if (!mounted) return;
+        setUserProfile(null);
+      }
+    };
+
+    loadProfile();
+    return () => {
+      mounted = false;
+    };
+  }, [role]);
 
   const getRoleColor = () => {
     switch (role) {

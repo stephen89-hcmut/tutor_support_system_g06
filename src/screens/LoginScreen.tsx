@@ -5,10 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, AlertCircle, Eye, EyeOff, BookOpen, Mail, Phone, GraduationCap, Users, Settings } from 'lucide-react';
+import { Shield, AlertCircle, Eye, EyeOff, BookOpen, Mail, Phone } from 'lucide-react';
 import { useRole } from '@/contexts/RoleContext';
 import { useToast } from '@/components/ui/use-toast';
-import { authenticateUser, UserEntity } from '@/data/mockUsers';
+import type { UserEntity } from '@/domain/entities/user';
+import { authService } from '@/application/services/authService';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 
@@ -35,16 +36,14 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       try {
         const userData = JSON.parse(savedUserData);
         // Simulate token validation
-        setTimeout(() => {
-          setRole(userData.role === 'Management' ? 'Manager' : (userData.role === 'Student' ? 'Student' : 'Tutor'));
-          setUserId(userData.userId);
-          setUserName(userData.username);
-          onLogin(userData as UserEntity);
-          toast({
-            title: 'Auto-login successful',
-            description: `Welcome back, ${userData.username}!`,
-          });
-        }, 500);
+        setRole(userData.role === 'Manager' ? 'Manager' : (userData.role === 'Student' ? 'Student' : 'Tutor'));
+        setUserId(userData.userId);
+        setUserName(userData.username);
+        onLogin(userData as UserEntity);
+        toast({
+          title: 'Auto-login successful',
+          description: `Welcome back, ${userData.username}!`,
+        });
       } catch (e) {
         // Invalid saved data, clear it
         localStorage.removeItem('hcmut_auth_token');
@@ -71,11 +70,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     setIsAuthenticating(true);
 
     try {
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Authenticate user from mock data
-      const user = authenticateUser(username.trim(), password);
+      const user = await authService.login(username.trim(), password);
 
       if (!user) {
         setLoginError('Sai tên đăng nhập hoặc mật khẩu.');
@@ -101,7 +96,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           ratingAvg: (user as any).ratingAvg,
           isInstructor: (user as any).isInstructor,
         }),
-        ...(user.role === 'Management' && {
+        ...(user.role === 'Manager' && {
           managerId: (user as any).managerId,
           department: (user as any).department,
         }),
@@ -117,12 +112,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       }
 
       // Set role context
-      const roleMapping = {
-        'Student': 'Student' as const,
-        'Tutor': 'Tutor' as const,
-        'Management': 'Manager' as const,
-      };
-      setRole(roleMapping[user.role]);
+      setRole(user.role);
       setUserId(user.userId);
       setUserName(user.username);
 
@@ -135,14 +125,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       });
     } catch (error: any) {
       setLoginError('Không thể kết nối đến máy chủ SSO. Vui lòng thử lại sau.');
+    } finally {
       setIsAuthenticating(false);
     }
-  };
-
-  const handleCancel = () => {
-    setUsername('');
-    setPassword('');
-    setLoginError(null);
   };
 
   return (

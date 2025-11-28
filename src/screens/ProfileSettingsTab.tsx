@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import { useRole } from '@/contexts/RoleContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -22,13 +21,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Edit, Save, X, RefreshCw, Upload, Calendar, Clock } from 'lucide-react';
+import { Edit, Save, X, RefreshCw, Upload, Calendar } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { getCurrentUserProfile, UserProfile } from '@/data/mockUserProfile';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { mockMeetings } from '@/data/mockMeetings';
-import { mockProgressRecords } from '@/data/mockProgress';
+import type { UserProfile } from '@/domain/entities/profile';
+import type { Meeting } from '@/domain/entities/meeting';
+import type { ProgressRecord } from '@/domain/entities/progress';
+import { profileService } from '@/application/services/profileService';
+import { meetingService } from '@/application/services/meetingService';
+import { progressService } from '@/application/services/progressService';
 import {
   RadarChart,
   Radar,
@@ -40,19 +42,78 @@ import {
 
 export function ProfileSettingsTab() {
   const { role } = useRole();
+  const createPlaceholderProfile = (currentRole: UserProfile['role'] | null): UserProfile => ({
+    userId: '',
+    username: '',
+    email: '',
+    phone: '',
+    fullName: '',
+    initials: '',
+    role: currentRole ?? 'Student',
+  });
   const [isEditing, setIsEditing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [profile, setProfile] = useState<UserProfile>(getCurrentUserProfile(role));
-  const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
+  const [profile, setProfile] = useState<UserProfile>(() => createPlaceholderProfile(role));
+  const [editedProfile, setEditedProfile] = useState<UserProfile>(() => createPlaceholderProfile(role));
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [progressRecords, setProgressRecords] = useState<ProgressRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    setProfile(getCurrentUserProfile(role));
-    setEditedProfile(getCurrentUserProfile(role));
+    if (!role) return;
+    let mounted = true;
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [profileData, meetingData, progressData] = await Promise.all([
+          profileService.getProfileByRole(role),
+          meetingService.getAll(),
+          progressService.getAll(),
+        ]);
+        if (!mounted) return;
+        setProfile(profileData);
+        setEditedProfile(profileData);
+        setMeetings(meetingData);
+        setProgressRecords(progressData);
+      } catch (err) {
+        if (!mounted) return;
+        setError('Không thể tải dữ liệu hồ sơ. Vui lòng thử lại sau.');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+    return () => {
+      mounted = false;
+    };
   }, [role]);
+
+  if (loading) {
+    return <div className="p-6 text-center text-muted-foreground">Đang tải hồ sơ người dùng...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-center text-muted-foreground">{error}</div>;
+  }
+
+  const handleInputChange = (field: keyof UserProfile) => (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setEditedProfile((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleTextareaChange = (field: keyof UserProfile) => (event: ChangeEvent<HTMLTextAreaElement>) => {
+    const value = event.target.value;
+    setEditedProfile((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -199,7 +260,7 @@ export function ProfileSettingsTab() {
   };
 
   // Student specific data
-  const studentProgress = mockProgressRecords.filter(r => r.studentId === profile.userId);
+  const studentProgress = progressRecords.filter((r) => r.studentId === profile.userId);
   const skillData = studentProgress.length > 0 ? [
     { metric: 'Understanding', value: Math.round(studentProgress.reduce((sum, r) => sum + r.understanding, 0) / studentProgress.length) },
     { metric: 'Problem Solving', value: Math.round(studentProgress.reduce((sum, r) => sum + r.problemSolving, 0) / studentProgress.length) },
@@ -207,13 +268,20 @@ export function ProfileSettingsTab() {
     { metric: 'Participation', value: Math.round(studentProgress.reduce((sum, r) => sum + r.participation, 0) / studentProgress.length) },
   ] : [];
 
-  const upcomingMeetings = mockMeetings
-    .filter(m => m.studentId === profile.userId && m.status === 'Scheduled')
+  const upcomingMeetings = meetings
+    .filter((m) => m.studentId === profile.userId && m.status === 'Scheduled')
     .slice(0, 3);
+  const studentTopics = Array.from(
+    new Set(
+      meetings
+        .filter((m) => m.studentId === profile.userId)
+        .map((m) => m.topic),
+    ),
+  );
 
   // Tutor specific data
-  const tutorStudents = new Set(mockMeetings.filter(m => m.tutorId === profile.userId).map(m => m.studentId)).size;
-  const totalHours = mockMeetings.filter(m => m.tutorId === profile.userId && m.status === 'Completed').length * 1.5; // Assume 1.5 hours per session
+  const tutorStudents = new Set(meetings.filter((m) => m.tutorId === profile.userId).map((m) => m.studentId)).size;
+  const totalHours = meetings.filter((m) => m.tutorId === profile.userId && m.status === 'Completed').length * 1.5; // Assume 1.5 hours per session
 
   return (
     <div className="space-y-6">
@@ -333,25 +401,11 @@ export function ProfileSettingsTab() {
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      value={editedProfile.phone}
-                      onChange={(e) =>
-                        setEditedProfile({ ...editedProfile, phone: e.target.value })
-                      }
-                    />
+                    <Input id="phone" value={editedProfile.phone} onChange={handleInputChange('phone')} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="about">Bio / About Me</Label>
-                    <Textarea
-                      id="about"
-                      value={editedProfile.about || ''}
-                      onChange={(e) =>
-                        setEditedProfile({ ...editedProfile, about: e.target.value })
-                      }
-                      rows={4}
-                      placeholder="Tell us about yourself..."
-                    />
+                    <Textarea id="about" value={editedProfile.about || ''} onChange={handleTextareaChange('about')} rows={4} placeholder="Tell us about yourself..." />
                   </div>
                 </>
               ) : (
@@ -385,18 +439,16 @@ export function ProfileSettingsTab() {
                         <Input
                           id="weakSubjects"
                           placeholder="e.g., Calculus, Data Structures"
-                          value={(editedProfile as any).weakSubjects || ''}
-                          onChange={(e) =>
-                            setEditedProfile({ ...editedProfile, weakSubjects: e.target.value } as any)
-                          }
+                          value={editedProfile.weakSubjects || ''}
+                          onChange={handleInputChange('weakSubjects')}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="preferredMode">Preferred Learning Mode</Label>
                         <Select
-                          value={(editedProfile as any).preferredMode || 'Both'}
-                          onValueChange={(value) =>
-                            setEditedProfile({ ...editedProfile, preferredMode: value } as any)
+                          value={editedProfile.preferredMode || 'Both'}
+                          onValueChange={(value: 'Online' | 'In-Person' | 'Both') =>
+                            setEditedProfile({ ...editedProfile, preferredMode: value })
                           }
                         >
                           <SelectTrigger>
@@ -414,10 +466,8 @@ export function ProfileSettingsTab() {
                         <Input
                           id="preferredTime"
                           placeholder="e.g., Morning (8-12), Afternoon (13-17)"
-                          value={(editedProfile as any).preferredTime || ''}
-                          onChange={(e) =>
-                            setEditedProfile({ ...editedProfile, preferredTime: e.target.value } as any)
-                          }
+                          value={editedProfile.preferredTime || ''}
+                          onChange={handleInputChange('preferredTime')}
                         />
                       </div>
                     </>
@@ -472,15 +522,15 @@ export function ProfileSettingsTab() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {mockMeetings
-                      .filter(m => m.studentId === profile.userId)
-                      .map((m, idx, arr) => arr.findIndex(me => me.topic === m.topic) === idx)
-                      .filter(Boolean)
-                      .map((m) => (
-                        <Badge key={m.id} variant="outline" className="mr-2 mb-2">
-                          {m.topic}
+                    {studentTopics.length > 0 ? (
+                      studentTopics.map((topic) => (
+                        <Badge key={topic} variant="outline" className="mr-2 mb-2">
+                          {topic}
                         </Badge>
-                      ))}
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No subjects found.</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -527,11 +577,11 @@ export function ProfileSettingsTab() {
                       <Input
                         placeholder="Enter subjects separated by commas (e.g., Data Structures, Algorithms)"
                         value={editedProfile.expertise?.join(', ') || ''}
-                        onChange={(e) => {
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => {
                           const expertise = e.target.value
                             .split(',')
-                            .map((s) => s.trim())
-                            .filter((s) => s.length > 0);
+                            .map((s: string) => s.trim())
+                            .filter((s: string) => s.length > 0);
                           setEditedProfile({ ...editedProfile, expertise });
                         }}
                       />
@@ -539,7 +589,7 @@ export function ProfileSettingsTab() {
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {profile.expertise && profile.expertise.length > 0 ? (
-                        profile.expertise.map((exp) => (
+                        profile.expertise.map((exp: string) => (
                           <Badge key={exp} variant="outline">
                             {exp}
                           </Badge>
@@ -606,7 +656,7 @@ export function ProfileSettingsTab() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Active Meetings</p>
-                      <p className="text-2xl font-bold">{mockMeetings.filter(m => m.status === 'Scheduled').length}</p>
+                      <p className="text-2xl font-bold">{meetings.filter((m) => m.status === 'Scheduled').length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -626,18 +676,18 @@ export function ProfileSettingsTab() {
                     <Input
                       placeholder="Enter skills separated by commas"
                       value={editedProfile.skills?.join(', ') || ''}
-                      onChange={(e) => {
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => {
                         const skills = e.target.value
                           .split(',')
-                          .map((s) => s.trim())
-                          .filter((s) => s.length > 0);
+                          .map((s: string) => s.trim())
+                          .filter((s: string) => s.length > 0);
                         setEditedProfile({ ...editedProfile, skills });
                       }}
                     />
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {profile.skills.map((skill) => (
+                    {profile.skills.map((skill: string) => (
                       <Badge key={skill} className="bg-primary text-primary-foreground">
                         {skill}
                       </Badge>
@@ -697,7 +747,7 @@ export function ProfileSettingsTab() {
                   id="avatar"
                   type="file"
                   accept="image/*"
-                  onChange={(e) => {
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     const file = e.target.files?.[0];
                     if (file) {
                       if (file.size > 2 * 1024 * 1024) {

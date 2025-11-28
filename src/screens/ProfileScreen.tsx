@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import { useRole } from '@/contexts/RoleContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +17,8 @@ import {
 import { ArrowLeft, Edit, Save, X, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
-import { getCurrentUserProfile, UserProfile } from '@/data/mockUserProfile';
+import type { UserProfile } from '@/domain/entities/profile';
+import { profileService } from '@/application/services/profileService';
 import { format } from 'date-fns';
 
 interface ProfileScreenProps {
@@ -26,17 +27,68 @@ interface ProfileScreenProps {
 
 export function ProfileScreen({ onBack }: ProfileScreenProps) {
   const { role } = useRole();
+  const createPlaceholderProfile = (currentRole: UserProfile['role'] | null): UserProfile => ({
+    userId: '',
+    username: '',
+    email: '',
+    phone: '',
+    fullName: '',
+    initials: '',
+    role: currentRole ?? 'Student',
+  });
   const [isEditing, setIsEditing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showSyncDialog, setShowSyncDialog] = useState(false);
-  const [profile, setProfile] = useState<UserProfile>(getCurrentUserProfile(role));
-  const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
+  const [profile, setProfile] = useState<UserProfile>(() => createPlaceholderProfile(role));
+  const [editedProfile, setEditedProfile] = useState<UserProfile>(() => createPlaceholderProfile(role));
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    setProfile(getCurrentUserProfile(role));
-    setEditedProfile(getCurrentUserProfile(role));
+    if (!role) return;
+    let mounted = true;
+    const loadProfile = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await profileService.getProfileByRole(role);
+        if (!mounted) return;
+        setProfile(data);
+        setEditedProfile(data);
+      } catch (err) {
+        if (!mounted) return;
+        setError('Không thể tải hồ sơ người dùng.');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadProfile();
+    return () => {
+      mounted = false;
+    };
   }, [role]);
+
+  if (loading) {
+    return <div className="p-6 text-center text-muted-foreground">Đang tải hồ sơ...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-center text-muted-foreground">{error}</div>;
+  }
+
+  const handleInputChange = (field: keyof UserProfile) => (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setEditedProfile((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleTextareaChange = (field: keyof UserProfile) => (event: ChangeEvent<HTMLTextAreaElement>) => {
+    const value = event.target.value;
+    setEditedProfile((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -269,45 +321,19 @@ export function ProfileScreen({ onBack }: ProfileScreenProps) {
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      value={editedProfile.fullName}
-                      onChange={(e) =>
-                        setEditedProfile({ ...editedProfile, fullName: e.target.value })
-                      }
-                    />
+                    <Input id="fullName" value={editedProfile.fullName} onChange={handleInputChange('fullName')} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={editedProfile.email}
-                      onChange={(e) =>
-                        setEditedProfile({ ...editedProfile, email: e.target.value })
-                      }
-                    />
+                    <Input id="email" type="email" value={editedProfile.email} onChange={handleInputChange('email')} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      value={editedProfile.phone}
-                      onChange={(e) =>
-                        setEditedProfile({ ...editedProfile, phone: e.target.value })
-                      }
-                    />
+                    <Input id="phone" value={editedProfile.phone} onChange={handleInputChange('phone')} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="address">Address</Label>
-                    <Textarea
-                      id="address"
-                      value={editedProfile.address || ''}
-                      onChange={(e) =>
-                        setEditedProfile({ ...editedProfile, address: e.target.value })
-                      }
-                      rows={3}
-                    />
+                    <Textarea id="address" value={editedProfile.address || ''} onChange={handleTextareaChange('address')} rows={3} />
                   </div>
                 </>
               ) : (
@@ -377,7 +403,7 @@ export function ProfileScreen({ onBack }: ProfileScreenProps) {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-2">Expertise</p>
                       <div className="flex flex-wrap gap-2">
-                        {profile.expertise.map((exp) => (
+                        {profile.expertise.map((exp: string) => (
                           <Badge key={exp} variant="outline">
                             {exp}
                           </Badge>
@@ -397,14 +423,7 @@ export function ProfileScreen({ onBack }: ProfileScreenProps) {
             </CardHeader>
             <CardContent>
               {isEditing ? (
-                <Textarea
-                  value={editedProfile.about || ''}
-                  onChange={(e) =>
-                    setEditedProfile({ ...editedProfile, about: e.target.value })
-                  }
-                  rows={4}
-                  placeholder="Tell us about yourself..."
-                />
+                <Textarea value={editedProfile.about || ''} onChange={handleTextareaChange('about')} rows={4} placeholder="Tell us about yourself..." />
               ) : (
                 <p className="text-sm">{profile.about || 'No description provided.'}</p>
               )}
@@ -422,11 +441,11 @@ export function ProfileScreen({ onBack }: ProfileScreenProps) {
                   <Input
                     placeholder="Enter skills separated by commas (e.g., JavaScript, Python, React)"
                     value={editedProfile.skills?.join(', ') || ''}
-                    onChange={(e) => {
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => {
                       const skills = e.target.value
                         .split(',')
-                        .map((s) => s.trim())
-                        .filter((s) => s.length > 0);
+                        .map((s: string) => s.trim())
+                        .filter((s: string) => s.length > 0);
                       setEditedProfile({ ...editedProfile, skills });
                     }}
                   />
@@ -437,7 +456,7 @@ export function ProfileScreen({ onBack }: ProfileScreenProps) {
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {profile.skills && profile.skills.length > 0 ? (
-                    profile.skills.map((skill) => (
+                    profile.skills.map((skill: string) => (
                       <Badge key={skill} className="bg-primary text-primary-foreground">
                         {skill}
                       </Badge>

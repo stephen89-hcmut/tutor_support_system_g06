@@ -1,4 +1,4 @@
-import { HelpCircle, Facebook, Youtube, Linkedin } from 'lucide-react';
+import { HelpCircle, Youtube, Linkedin } from 'lucide-react';
 
 export function Footer() {
   return (

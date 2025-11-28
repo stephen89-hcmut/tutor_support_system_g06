@@ -1,18 +1,21 @@
-import { UserProfile } from '@/contexts/RoleContext';
+import type { UserProfile } from '@/domain/entities/profile';
 
 // Mock sync with external HCMUT DataCore API.
-export async function syncProfileWithHCMUT(userId: string, role: string): Promise<UserProfile> {
+export async function syncProfileWithHCMUT(userId: string): Promise<UserProfile> {
   // Simulate network delay
   await new Promise((res) => setTimeout(res, 800));
 
   // In a real implementation, call HCMUT_DATACORE API here and map fields.
   // Return an updated user object — here we just append a marker for demo.
   const updated: UserProfile = {
-    id: userId,
-    name: 'Nguyen Van A',
+    userId,
+    username: 'nguyenvana',
+    fullName: 'Nguyen Van A',
     initials: 'NVA',
     email: 'nguyenvana@hcmut.edu.vn',
+    phone: '+84 901 234 567',
     studentId: 'STU001',
+    role: 'Student',
   };
 
   // Simulate occasional failure (commented out by default)

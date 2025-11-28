@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,16 +22,17 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Calendar as CalendarIcon, Clock, Plus, X } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { mockMeetings, Meeting, MeetingMode } from '@/data/mockMeetings';
-import { Tutor } from '@/data/mockTutors';
+import type { Meeting, MeetingMode } from '@/domain/entities/meeting';
+import type { TutorProfile } from '@/domain/entities/tutor';
+import { meetingService } from '@/application/services/meetingService';
 import { notificationManager } from '@/services/NotificationSystem';
 import { useRole } from '@/contexts/RoleContext';
 import { cn } from '@/lib/utils';
 
 interface BookMeetingModalProps {
-  tutor: Tutor;
+  tutor: TutorProfile;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onBookComplete: () => void;
@@ -50,7 +51,7 @@ export function BookMeetingModal({
   onOpenChange,
   onBookComplete,
 }: BookMeetingModalProps) {
-  const { userId } = useRole();
+  const { userId, userName } = useRole();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [meetingMode, setMeetingMode] = useState<MeetingMode>('Zoom');
@@ -59,12 +60,30 @@ export function BookMeetingModal({
   const [topic, setTopic] = useState('');
   const [conflictError, setConflictError] = useState<string | null>(null);
   const [isBooking, setIsBooking] = useState(false);
+  const [existingMeetings, setExistingMeetings] = useState<Meeting[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMeetings = async () => {
+      try {
+        const data = await meetingService.getAll();
+        if (!mounted) return;
+        setExistingMeetings(data);
+      } catch (err) {
+        // ignore for now
+      }
+    };
+    loadMeetings();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Check for conflicts (UCB1.1 - Normal Flow step 6)
   const checkForConflicts = (date: string, time: string): boolean => {
     // Check if student or tutor already has a meeting at this time
-    const conflictingMeeting = mockMeetings.find(
+    const conflictingMeeting = existingMeetings.find(
       (m) =>
         m.status === 'Scheduled' &&
         m.date === date &&
@@ -140,7 +159,7 @@ export function BookMeetingModal({
         date: dateString,
         time: selectedTime,
         studentId: userId || 's1',
-        studentName: 'Current Student', // Would get from context
+        studentName: userName || 'Current Student',
         tutorId: tutor.id,
         tutorName: tutor.name,
         topic: topic.trim(),
@@ -151,28 +170,24 @@ export function BookMeetingModal({
         location: meetingMode === 'In-Person' ? 'HCMUT Campus' : undefined,
       };
 
-      // Add to mock meetings
-      mockMeetings.push(newMeeting);
+      await meetingService.schedule(newMeeting);
+      setExistingMeetings((prev) => [...prev, newMeeting]);
 
       // Send notification (UCB1.3 - SendNotification)
-      await notificationManager.sendNotification({
-        type: 'BookMeeting',
-        recipientId: tutor.id,
-        recipientRole: 'Tutor',
-        title: 'New Meeting Booked',
-        message: `Student has booked a meeting with you on ${format(selectedDate, 'MMM d, yyyy')} at ${selectedTime}`,
-        data: { meetingId: newMeeting.id },
-      });
+      await notificationManager.sendNotification(
+        'email',
+        tutor.id,
+        `Student has booked a meeting with you on ${format(selectedDate, 'MMM d, yyyy')} at ${selectedTime}`,
+        'New Meeting Booked',
+      );
 
       // Also notify student
-      await notificationManager.sendNotification({
-        type: 'BookMeeting',
-        recipientId: userId || 's1',
-        recipientRole: 'Student',
-        title: 'Meeting Booked Successfully',
-        message: `Your meeting with ${tutor.name} has been confirmed for ${format(selectedDate, 'MMM d, yyyy')} at ${selectedTime}`,
-        data: { meetingId: newMeeting.id },
-      });
+      await notificationManager.sendNotification(
+        'email',
+        userId || 's1',
+        `Your meeting with ${tutor.name} has been confirmed for ${format(selectedDate, 'MMM d, yyyy')} at ${selectedTime}`,
+        'Meeting Confirmation',
+      );
 
       toast({
         title: 'Meeting Booked Successfully',

@@ -1,35 +1,4 @@
-export interface UserProfile {
-  userId: string;
-  username: string;
-  email: string;
-  phone: string;
-  fullName: string;
-  avatar?: string;
-  initials: string;
-  role: 'Student' | 'Tutor' | 'Manager';
-  // Student specific
-  studentId?: string;
-  enrollmentYear?: number;
-  major?: string;
-  department?: string;
-  year?: number;
-  // Tutor specific
-  tutorId?: string;
-  expertise?: string[];
-  ratingAvg?: number;
-  // Manager specific
-  managerId?: string;
-  managerDepartment?: string;
-  // Common
-  address?: string;
-  about?: string;
-  skills?: string[];
-  lastSynced?: string;
-  // Student specific - Learning Preferences
-  weakSubjects?: string;
-  preferredMode?: 'Online' | 'In-Person' | 'Both';
-  preferredTime?: string;
-}
+import type { UserProfile } from '@/domain/entities/profile';
 
 // Mock user profiles based on role
 export const mockUserProfiles: Record<string, UserProfile> = {

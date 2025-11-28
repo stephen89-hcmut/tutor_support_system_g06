@@ -1,21 +1,4 @@
-export type AccessLevel = 'public' | 'restricted' | 'private';
-export type DocumentType = 'Lecture Notes' | 'Assignment' | 'Study Material' | 'Research Paper' | 'Lab Manual' | 'Project Report' | 'Syllabus';
-export type FileFormat = 'PDF' | 'DOCX' | 'ZIP' | 'PPTX' | 'XLSX';
-
-export interface Document {
-  id: string;
-  title: string;
-  description: string;
-  type: DocumentType;
-  format: FileFormat;
-  size: string; // e.g., "2.4 MB"
-  downloads: number;
-  accessLevel: AccessLevel;
-  uploadedBy: string; // User ID
-  uploadedByName: string; // Display name
-  uploadDate: string; // ISO date string
-  category?: string;
-}
+import type { Document } from '@/domain/entities/document';
 
 export const mockDocuments: Document[] = [
   {

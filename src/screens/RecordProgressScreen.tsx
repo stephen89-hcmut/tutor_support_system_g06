@@ -23,10 +23,12 @@ import {
 } from '@/components/ui/dialog';
 import { ArrowLeft, Save, UserX } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { mockMeetings } from '@/data/mockMeetings';
-import { mockStudents } from '@/data/mockStudents';
 import { notificationManager } from '@/services/NotificationSystem';
-import type { OverallRating, AttendanceStatus } from '@/data/mockProgress';
+import type { OverallRating, AttendanceStatus } from '@/domain/entities/progress';
+import type { StudentProfile } from '@/domain/entities/student';
+import type { Meeting } from '@/domain/entities/meeting';
+import { studentService } from '@/application/services/studentService';
+import { meetingService } from '@/application/services/meetingService';
 
 interface RecordProgressScreenProps {
   studentId: string;
@@ -39,6 +41,10 @@ export function RecordProgressScreen({
   onBack,
   onSave,
 }: RecordProgressScreenProps) {
+  const [student, setStudent] = useState<StudentProfile | null>(null);
+  const [availableSessions, setAvailableSessions] = useState<Meeting[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string>('');
   const [attendance, setAttendance] = useState<AttendanceStatus>('Present');
   const [absenceReason, setAbsenceReason] = useState('');
@@ -53,10 +59,34 @@ export function RecordProgressScreen({
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { toast } = useToast();
 
-  const student = mockStudents.find(s => s.id === studentId);
-  const availableSessions = mockMeetings.filter(
-    m => m.studentId === studentId && m.status === 'Completed'
-  );
+  useEffect(() => {
+    let mounted = true;
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [studentData, meetingData] = await Promise.all([
+          studentService.getById(studentId),
+          meetingService.getByStudent(studentId),
+        ]);
+        if (!mounted) return;
+        setStudent(studentData ?? null);
+        setAvailableSessions(meetingData.filter((m) => m.status === 'Completed'));
+      } catch (err) {
+        if (!mounted) return;
+        setError('Không thể tải dữ liệu sinh viên hoặc buổi học.');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+    return () => {
+      mounted = false;
+    };
+  }, [studentId]);
 
   const handleSave = () => {
     // Validation
@@ -154,7 +184,23 @@ export function RecordProgressScreen({
     }
   }, [understanding, problemSolving, codeQuality, participation, attendance]);
 
-  const selectedSession = availableSessions.find(s => s.id === selectedSessionId);
+  const selectedSession = availableSessions.find((s) => s.id === selectedSessionId);
+
+  if (loading) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        Đang tải dữ liệu phiên học và sinh viên...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

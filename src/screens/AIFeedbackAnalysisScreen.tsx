@@ -23,7 +23,7 @@ import {
   Bar,
   ResponsiveContainer,
 } from 'recharts';
-import { ArrowLeft, Brain, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Brain } from 'lucide-react';
 
 interface AIFeedbackAnalysisScreenProps {
   onBack: () => void;
@@ -242,7 +242,7 @@ export function AIFeedbackAnalysisScreen({ onBack }: AIFeedbackAnalysisScreenPro
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {analysisData.sentiment.map((entry: any, index: number) => (
+                      {analysisData.sentiment.map((_: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>

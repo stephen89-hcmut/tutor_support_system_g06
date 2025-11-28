@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,16 +11,15 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Search, Sparkles, Grid, List } from 'lucide-react';
-import { mockTutors, Tutor } from '@/data/mockTutors';
+import type { TutorProfile } from '@/domain/entities/tutor';
+import { tutorService } from '@/application/services/tutorService';
 import { BookMeetingModal } from '@/components/BookMeetingModal';
-import { useRole } from '@/contexts/RoleContext';
 
 interface BookMeetingScreenProps {
   onViewTutorProfile: (tutorId: string) => void;
 }
 
 export function BookMeetingScreen({ onViewTutorProfile }: BookMeetingScreenProps) {
-  const { userId } = useRole();
   const [searchQuery, setSearchQuery] = useState('');
   const [department, setDepartment] = useState<string>('all');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
@@ -29,29 +28,57 @@ export function BookMeetingScreen({ onViewTutorProfile }: BookMeetingScreenProps
   const [minRating, setMinRating] = useState<string>('all');
   const [language, setLanguage] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
-  const [selectedTutor, setSelectedTutor] = useState<Tutor | null>(null);
+  const [selectedTutor, setSelectedTutor] = useState<TutorProfile | null>(null);
   const [showBookModal, setShowBookModal] = useState(false);
+  const [tutors, setTutors] = useState<TutorProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadTutors = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await tutorService.list();
+        if (!mounted) return;
+        setTutors(data);
+      } catch (err) {
+        if (!mounted) return;
+        setError('Không thể tải danh sách gia sư.');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadTutors();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const allSkills = useMemo(() => {
     const skillsSet = new Set<string>();
-    mockTutors.forEach(tutor => {
+    tutors.forEach((tutor) => {
       tutor.skills.forEach(skill => skillsSet.add(skill));
     });
     return Array.from(skillsSet);
-  }, []);
+  }, [tutors]);
 
   const departments = useMemo(() => {
-    const deptSet = new Set(mockTutors.map(t => t.department));
+    const deptSet = new Set(tutors.map(t => t.department));
     return Array.from(deptSet);
-  }, []);
+  }, [tutors]);
 
   const filteredTutors = useMemo(() => {
-    let tutors = [...mockTutors];
+    let tutorList = [...tutors];
 
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      tutors = tutors.filter(
+      tutorList = tutorList.filter(
         tutor =>
           tutor.name.toLowerCase().includes(query) ||
           tutor.department.toLowerCase().includes(query) ||
@@ -61,19 +88,19 @@ export function BookMeetingScreen({ onViewTutorProfile }: BookMeetingScreenProps
 
     // Department filter
     if (department !== 'all') {
-      tutors = tutors.filter(tutor => tutor.department === department);
+      tutorList = tutorList.filter(tutor => tutor.department === department);
     }
 
     // Skills filter
     if (selectedSkills.length > 0) {
-      tutors = tutors.filter(tutor =>
+      tutorList = tutorList.filter(tutor =>
         selectedSkills.some(skill => tutor.skills.includes(skill))
       );
     }
 
     // Meeting mode filter
     if (meetingMode !== 'all') {
-      tutors = tutors.filter(tutor => {
+      tutorList = tutorList.filter(tutor => {
         if (meetingMode === 'online') {
           return tutor.meetingMode === 'Online' || tutor.meetingMode === 'Both';
         } else if (meetingMode === 'in-person') {
@@ -85,24 +112,24 @@ export function BookMeetingScreen({ onViewTutorProfile }: BookMeetingScreenProps
 
     // Gender filter
     if (gender !== 'all') {
-      tutors = tutors.filter(tutor => tutor.gender === gender);
+      tutorList = tutorList.filter(tutor => tutor.gender === gender);
     }
 
     // Minimum rating filter
     if (minRating !== 'all') {
       const minRatingValue = parseFloat(minRating);
-      tutors = tutors.filter(tutor => tutor.rating >= minRatingValue);
+      tutorList = tutorList.filter(tutor => tutor.rating >= minRatingValue);
     }
 
     // Language filter
     if (language !== 'all') {
-      tutors = tutors.filter(tutor =>
+      tutorList = tutorList.filter(tutor =>
         tutor.languages.includes(language as any) || tutor.languages.includes('Both')
       );
     }
 
-    return tutors;
-  }, [searchQuery, department, selectedSkills, meetingMode, gender, minRating, language]);
+    return tutorList;
+  }, [searchQuery, department, selectedSkills, meetingMode, gender, minRating, language, tutors]);
 
   const toggleSkill = (skill: string) => {
     setSelectedSkills(prev =>
@@ -110,7 +137,7 @@ export function BookMeetingScreen({ onViewTutorProfile }: BookMeetingScreenProps
     );
   };
 
-  const handleBookClick = (tutor: Tutor) => {
+  const handleBookClick = (tutor: TutorProfile) => {
     setSelectedTutor(tutor);
     setShowBookModal(true);
   };
@@ -119,6 +146,14 @@ export function BookMeetingScreen({ onViewTutorProfile }: BookMeetingScreenProps
     setShowBookModal(false);
     setSelectedTutor(null);
   };
+
+  if (loading) {
+    return <div className="p-6 text-center text-muted-foreground">Đang tải danh sách gia sư...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-center text-muted-foreground">{error}</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -343,7 +378,7 @@ export function BookMeetingScreen({ onViewTutorProfile }: BookMeetingScreenProps
 }
 
 interface TutorCardProps {
-  tutor: Tutor;
+  tutor: TutorProfile;
   onBook: () => void;
   onViewProfile: () => void;
 }

@@ -1,5 +1,4 @@
-import { useMemo } from 'react';
-import { useRole } from '@/contexts/RoleContext';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -20,38 +19,58 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { TrendingUp, Target, Code, MessageSquare } from 'lucide-react';
-import {
-  mockProgressRecords,
-  calculateOverallPerformance,
-  calculateAverageMetrics,
-  getProgressTrend,
-} from '@/data/mockProgress';
-import { mockStudents } from '@/data/mockStudents';
+import type { ProgressRecord } from '@/domain/entities/progress';
+import type { StudentProfile } from '@/domain/entities/student';
+import { progressService } from '@/application/services/progressService';
+import { studentService } from '@/application/services/studentService';
+import { getProgressTrend } from '@/domain/services/progressMetrics';
+
+type TrendPoint = ReturnType<typeof getProgressTrend>;
 
 export function MyProgressScreen() {
-  const { role } = useRole();
-  
-  // Get current student (in real app, from auth context)
-  const currentStudent = mockStudents[0];
-  const studentRecords = useMemo(
-    () => mockProgressRecords.filter(r => r.studentId === currentStudent.id),
-    [currentStudent.id]
-  );
+  const [currentStudent, setCurrentStudent] = useState<StudentProfile | null>(null);
+  const [studentRecords, setStudentRecords] = useState<ProgressRecord[]>([]);
+  const [overallPerformance, setOverallPerformance] = useState(0);
+  const [averageMetrics, setAverageMetrics] = useState({
+    understanding: 0,
+    problemSolving: 0,
+    codeQuality: 0,
+    participation: 0,
+  });
+  const [progressTrend, setProgressTrend] = useState<TrendPoint>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const overallPerformance = useMemo(
-    () => calculateOverallPerformance(studentRecords),
-    [studentRecords]
-  );
+  useEffect(() => {
+    let mounted = true;
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const students = await studentService.list();
+        const student = students[0] ?? null;
+        const progress = await progressService.getByStudent(student?.id ?? '1');
+        if (!mounted) return;
+        setCurrentStudent(student);
+        setStudentRecords(progress.records);
+        setOverallPerformance(progress.overall);
+        setAverageMetrics(progress.averages);
+        setProgressTrend(progress.trend);
+      } catch (err) {
+        if (!mounted) return;
+        setError('Không thể tải dữ liệu tiến độ.');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
 
-  const averageMetrics = useMemo(
-    () => calculateAverageMetrics(studentRecords),
-    [studentRecords]
-  );
-
-  const progressTrend = useMemo(
-    () => getProgressTrend(studentRecords),
-    [studentRecords]
-  );
+    loadData();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const radarData = useMemo(
     () => [
@@ -75,6 +94,14 @@ export function MyProgressScreen() {
         return 'bg-gray-500 text-white';
     }
   };
+
+  if (loading || !currentStudent) {
+    return <div className="p-6 text-center text-muted-foreground">Đang tải dữ liệu tiến độ...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-center text-muted-foreground">{error}</div>;
+  }
 
   return (
     <div className="space-y-6">

@@ -1,44 +1,8 @@
-// Mock Users Data - Simulating HCMUT_SSO System
-// Based on User & Role Class Diagram
-
-export interface User {
-  userId: string;
-  username: string;
-  email: string;
-  passwordHash: string; // In real system, this would be hashed. Here we store plain text for simulation.
-  createdAt: string;
-  role: 'Student' | 'Tutor' | 'Management';
-}
-
-export interface Student extends User {
-  studentId: string;
-  enrollmentYear: number;
-  majors: string;
-}
-
-export interface Tutor extends User {
-  tutorId: string;
-  expertise: string[];
-  ratingAvg: number;
-  isInstructor?: boolean; // true = instructor, false = senior student
-}
-
-export interface Management extends User {
-  managerId: string;
-  department: string;
-}
-
-export type UserEntity = Student | Tutor | Management;
-
-// Simple password hashing simulation (for demo purposes only)
-// In production, use proper hashing like bcrypt
-function hashPassword(password: string): string {
-  // Simple hash simulation - in real app, use bcrypt or similar
-  return btoa(password); // Base64 encoding for simulation
-}
+import { ManagerAccount, StudentAccount, TutorAccount, UserEntity } from '@/domain/entities/user';
+import { hashPassword } from '@/infrastructure/mockApi/utils/hashPassword';
 
 // Mock Users - 20 Students
-const mockStudents: Student[] = [
+export const mockStudentAccounts: StudentAccount[] = [
   {
     userId: 's1',
     username: 'nguyenvana',
@@ -262,7 +226,7 @@ const mockStudents: Student[] = [
 ];
 
 // Mock Tutors - 10 Tutors (mix of instructors and senior students)
-const mockTutors: Tutor[] = [
+export const mockTutorAccounts: TutorAccount[] = [
   {
     userId: 't1',
     username: 'drnguyenvana',
@@ -386,56 +350,19 @@ const mockTutors: Tutor[] = [
 ];
 
 // Mock Management - 1 Manager
-const mockManagers: Management[] = [
+export const mockManagerAccounts: ManagerAccount[] = [
   {
     userId: 'm1',
     username: 'manageradmin',
     email: 'manager@hcmut.edu.vn',
     passwordHash: hashPassword('manager123'),
     createdAt: '2019-01-01T00:00:00',
-    role: 'Management',
+    role: 'Manager',
     managerId: 'M001',
     department: 'Computer Science',
   },
 ];
 
 // Combine all users
-export const mockUsers: UserEntity[] = [
-  ...mockStudents,
-  ...mockTutors,
-  ...mockManagers,
-];
-
-// Helper function to find user by username
-export function findUserByUsername(username: string): UserEntity | undefined {
-  return mockUsers.find((user) => user.username === username);
-}
-
-// Helper function to authenticate user
-export function authenticateUser(username: string, password: string): UserEntity | null {
-  const user = findUserByUsername(username);
-  if (!user) {
-    return null;
-  }
-
-  // Compare password hash
-  const inputPasswordHash = hashPassword(password);
-  if (user.passwordHash === inputPasswordHash) {
-    return user;
-  }
-
-  return null;
-}
-
-// Helper function to get user display name
-export function getUserDisplayName(user: UserEntity): string {
-  if (user.role === 'Student') {
-    return `${(user as Student).studentId} - ${user.username}`;
-  } else if (user.role === 'Tutor') {
-    return `${(user as Tutor).tutorId} - ${user.username}`;
-  } else if (user.role === 'Management') {
-    return `${(user as Management).managerId} - ${user.username}`;
-  }
-  return user.username;
-}
+export const mockUsers: UserEntity[] = [...mockStudentAccounts, ...mockTutorAccounts, ...mockManagerAccounts];
 

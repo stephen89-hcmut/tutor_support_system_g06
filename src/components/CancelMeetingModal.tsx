@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { notificationManager } from '@/services/NotificationSystem';
-import { Meeting, CancelledBy } from '@/data/mockMeetings';
+import type { Meeting, CancelledBy } from '@/domain/entities/meeting';
 
 interface CancelMeetingModalProps {
   meeting: Meeting | null;

@@ -1,43 +1,6 @@
-export interface Student {
-  id: string;
-  name: string;
-  studentId: string;
-  progress: number; // 0-100
-  status: 'Active' | 'At Risk' | 'Inactive';
-  rating: number; // 0-5
-  email: string;
-  phone: string;
-  joinDate: string;
-  lastSession: string;
-  totalSessions: number;
-  personalInfo: {
-    dateOfBirth: string;
-    address: string;
-    major: string;
-    year: number;
-  };
-  sessionHistory: Array<{
-    id: string;
-    date: string;
-    duration: number;
-    topic: string;
-    notes: string;
-  }>;
-  progressData: Array<{
-    date: string;
-    score: number;
-    category: string;
-  }>;
-  feedback: Array<{
-    id: string;
-    date: string;
-    message: string;
-    status: 'Pending' | 'Responded';
-    response?: string;
-  }>;
-}
+import type { StudentProfile } from '@/domain/entities/student';
 
-export const mockStudents: Student[] = [
+export const mockStudents: StudentProfile[] = [
   {
     id: '1',
     name: 'Nguyen Van A',

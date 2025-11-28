@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,16 +19,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CancelMeetingModal } from '@/components/CancelMeetingModal';
 import { RescheduleMeetingScreen } from './RescheduleMeetingScreen';
-import { mockMeetings, Meeting, MeetingStatus } from '@/data/mockMeetings';
+import type { Meeting, MeetingStatus } from '@/domain/entities/meeting';
+import { meetingService } from '@/application/services/meetingService';
 import { Calendar, Video, MapPin, MoreVertical, X } from 'lucide-react';
 
 interface MeetingsScreenProps {
-  onReschedule: (meetingId: string) => void;
   onCancel: (meetingId: string, cancelledBy: string, reason: string) => void;
+  onBookNewMeeting: () => void;
 }
 
 export function MeetingsScreen({
-  onReschedule,
   onCancel,
   onBookNewMeeting,
 }: MeetingsScreenProps) {
@@ -36,14 +36,42 @@ export function MeetingsScreen({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [rescheduleMeeting, setRescheduleMeeting] = useState<Meeting | null>(null);
   const [activeTab, setActiveTab] = useState<MeetingStatus>('Scheduled');
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const meetingsByStatus = useMemo(() => {
-    return {
-      Scheduled: mockMeetings.filter(m => m.status === 'Scheduled'),
-      Completed: mockMeetings.filter(m => m.status === 'Completed'),
-      Cancelled: mockMeetings.filter(m => m.status === 'Cancelled'),
+  useEffect(() => {
+    let mounted = true;
+    const loadMeetings = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await meetingService.getAll();
+        if (!mounted) return;
+        setMeetings(data);
+      } catch (err) {
+        if (!mounted) return;
+        setError('Không thể tải danh sách buổi học.');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadMeetings();
+    return () => {
+      mounted = false;
     };
   }, []);
+
+  const meetingsByStatus = useMemo<Record<MeetingStatus, Meeting[]>>(() => {
+    return {
+      Scheduled: meetings.filter((m) => m.status === 'Scheduled'),
+      Completed: meetings.filter((m) => m.status === 'Completed'),
+      Cancelled: meetings.filter((m) => m.status === 'Cancelled'),
+    };
+  }, [meetings]);
 
   const handleRescheduleClick = (meeting: Meeting) => {
     setRescheduleMeeting(meeting);
@@ -54,18 +82,25 @@ export function MeetingsScreen({
     setShowCancelModal(true);
   };
 
-  const handleRescheduleComplete = (meetingId: string, newDate: string, newTime: string) => {
-    // Update meeting in mock data
-    const meeting = mockMeetings.find(m => m.id === meetingId);
-    if (meeting) {
-      meeting.date = newDate;
-      meeting.time = newTime;
-    }
+  const handleRescheduleComplete = async (meetingId: string, newDate: string, newTime: string) => {
+    await meetingService.update(meetingId, { date: newDate, time: newTime });
+    setMeetings((prev) =>
+      prev.map((meeting) =>
+        meeting.id === meetingId ? { ...meeting, date: newDate, time: newTime } : meeting,
+      ),
+    );
     setRescheduleMeeting(null);
   };
 
   const handleCancelComplete = (meetingId: string, cancelledBy: string, reason: string) => {
     onCancel(meetingId, cancelledBy as any, reason);
+    setMeetings((prev) =>
+      prev.map((meeting) =>
+        meeting.id === meetingId
+          ? { ...meeting, status: 'Cancelled', cancelledBy: cancelledBy as Meeting['cancelledBy'], cancellationReason: reason }
+          : meeting,
+      ),
+    );
     setShowCancelModal(false);
     setSelectedMeeting(null);
   };
@@ -95,6 +130,14 @@ export function MeetingsScreen({
     );
   }
 
+  if (loading) {
+    return <div className="p-6 text-center text-muted-foreground">Đang tải danh sách buổi học...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-center text-muted-foreground">{error}</div>;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -108,7 +151,7 @@ export function MeetingsScreen({
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as MeetingStatus)}>
+      <Tabs value={activeTab} onValueChange={(value: string) => setActiveTab(value as MeetingStatus)}>
         <TabsList>
           <TabsTrigger value="Scheduled">
             Upcoming ({meetingsByStatus.Scheduled.length})

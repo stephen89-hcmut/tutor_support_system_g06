@@ -16,9 +16,21 @@ import { MyProgressScreen } from './screens/MyProgressScreen';
 import { RecordProgressScreen } from './screens/RecordProgressScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
-import { mockMeetings } from './data/mockMeetings';
-import { UserEntity } from './data/mockUsers';
+import type { UserEntity } from '@/domain/entities/user';
+import { meetingService } from '@/application/services/meetingService';
 import { useToast } from './components/ui/use-toast';
+
+type StoredRole = 'Student' | 'Tutor' | 'Manager' | 'Management';
+
+const normalizeStoredRole = (role: StoredRole | string | undefined): 'Student' | 'Tutor' | 'Manager' | null => {
+  if (role === 'Student' || role === 'Tutor' || role === 'Manager') {
+    return role;
+  }
+  if (role === 'Management') {
+    return 'Manager';
+  }
+  return null;
+};
 
 function App() {
   const { role, setRole, setUserId, setUserName } = useRole();
@@ -39,12 +51,11 @@ function App() {
     if (token && savedUserData) {
       try {
         const userData = JSON.parse(savedUserData);
-        const roleMapping = {
-          'Student': 'Student' as const,
-          'Tutor': 'Tutor' as const,
-          'Management': 'Manager' as const,
-        };
-        setRole(roleMapping[userData.role]);
+        const normalizedRole = normalizeStoredRole(userData.role);
+        if (!normalizedRole) {
+          throw new Error('Invalid role');
+        }
+        setRole(normalizedRole);
         setUserId(userData.userId);
         setUserName(userData.username);
         setIsAuthenticated(true);
@@ -59,12 +70,7 @@ function App() {
   }, [setRole, setUserId, setUserName]);
 
   const handleLogin = (user: UserEntity) => {
-    const roleMapping = {
-      'Student': 'Student' as const,
-      'Tutor': 'Tutor' as const,
-      'Management': 'Manager' as const,
-    };
-    setRole(roleMapping[user.role]);
+    setRole(user.role);
     setUserId(user.userId);
     setUserName(user.username);
     setIsAuthenticated(true);
@@ -176,20 +182,9 @@ function App() {
     alert('Export functionality - would download student data');
   };
 
-  const handleCancelMeeting = (meetingId: string, cancelledBy: string, reason: string) => {
-    // Update meeting status in mock data
-    const meeting = mockMeetings.find(m => m.id === meetingId);
-    if (meeting) {
-      meeting.status = 'Cancelled';
-      meeting.cancelledBy = cancelledBy as any;
-      meeting.cancellationReason = reason;
-    }
+  const handleCancelMeeting = async (meetingId: string, cancelledBy: string, reason: string) => {
+    await meetingService.cancel(meetingId, cancelledBy as any, reason);
     console.log('Meeting cancelled:', meetingId, cancelledBy, reason);
-  };
-
-  const handleRescheduleMeeting = (meetingId: string) => {
-    // This is handled within MeetingsScreen
-    console.log('Reschedule meeting:', meetingId);
   };
 
   const renderScreenContent = () => {
@@ -223,7 +218,6 @@ function App() {
     if (currentScreen === 'meetings') {
       return (
         <MeetingsScreen
-          onReschedule={handleRescheduleMeeting}
           onCancel={handleCancelMeeting}
           onBookNewMeeting={() => setCurrentScreen('book-meeting')}
         />

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRole } from '@/contexts/RoleContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   Dialog,
@@ -29,7 +28,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, Search, Grid, List, Download, Share2, MoreVertical, Lock, Globe, Shield } from 'lucide-react';
-import { mockDocuments, Document, AccessLevel, DocumentType } from '@/data/mockDocuments';
+import type { Document, AccessLevel, DocumentType } from '@/domain/entities/document';
+import { materialService } from '@/application/services/materialService';
 import { useToast } from '@/components/ui/use-toast';
 
 export function DocumentLibraryScreen() {
@@ -42,14 +42,42 @@ export function DocumentLibraryScreen() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [showManageAccessModal, setShowManageAccessModal] = useState(false);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Get current user ID (mock - in real app, get from auth context)
   const currentUserId = role === 'Student' ? 's1' : role === 'Tutor' ? 't1' : 'm1';
 
+  useEffect(() => {
+    let mounted = true;
+    const loadDocuments = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await materialService.list();
+        if (!mounted) return;
+        setDocuments(data);
+      } catch (err) {
+        if (!mounted) return;
+        setError('Không thể tải thư viện tài liệu.');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDocuments();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // Filter documents based on role and access level
   const filteredDocuments = useMemo(() => {
-    let docs = [...mockDocuments];
+    let docs = [...documents];
 
     // Role-based access filtering
     if (role === 'Student') {
@@ -90,12 +118,17 @@ export function DocumentLibraryScreen() {
     }
 
     return docs;
-  }, [searchQuery, categoryFilter, accessLevelFilter, sortBy, role]);
+  }, [searchQuery, categoryFilter, accessLevelFilter, sortBy, role, documents]);
 
   const categories = useMemo(() => {
-    const cats = new Set(mockDocuments.map(doc => doc.category).filter(Boolean));
+    const cats = new Set<string>();
+    documents.forEach((doc) => {
+      if (doc.category) {
+        cats.add(doc.category);
+      }
+    });
     return Array.from(cats);
-  }, []);
+  }, [documents]);
 
   const totalDownloads = useMemo(() => {
     return filteredDocuments.reduce((sum, doc) => sum + doc.downloads, 0);
@@ -134,9 +167,7 @@ export function DocumentLibraryScreen() {
     return false;
   };
 
-  const canManageAccess = (document: Document): boolean => {
-    return role === 'Manager';
-  };
+  const canManageAccess = role === 'Manager';
 
   const getAccessBadge = (accessLevel: AccessLevel) => {
     switch (accessLevel) {
@@ -163,6 +194,14 @@ export function DocumentLibraryScreen() {
         );
     }
   };
+
+  if (loading) {
+    return <div className="p-6 text-center text-muted-foreground">Đang tải tài liệu...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-center text-muted-foreground">{error}</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -280,7 +319,7 @@ export function DocumentLibraryScreen() {
                 setShowManageAccessModal(true);
               }}
               canDelete={canDelete(doc)}
-              canManageAccess={canManageAccess(doc)}
+              canManageAccess={canManageAccess}
               getAccessBadge={getAccessBadge}
             />
           ))}
@@ -299,7 +338,7 @@ export function DocumentLibraryScreen() {
                 setShowManageAccessModal(true);
               }}
               canDelete={canDelete(doc)}
-              canManageAccess={canManageAccess(doc)}
+              canManageAccess={canManageAccess}
               getAccessBadge={getAccessBadge}
               listView
             />
@@ -312,7 +351,6 @@ export function DocumentLibraryScreen() {
         open={showUploadModal}
         onOpenChange={setShowUploadModal}
         currentUserId={currentUserId}
-        currentUserName={role === 'Tutor' ? 'Dr. Nguyen Van A' : 'Manager Admin'}
       />
 
       {/* Manage Access Modal */}
@@ -473,14 +511,12 @@ interface UploadDocumentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentUserId: string;
-  currentUserName: string;
 }
 
 function UploadDocumentModal({
   open,
   onOpenChange,
   currentUserId,
-  currentUserName,
 }: UploadDocumentModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');

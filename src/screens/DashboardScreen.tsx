@@ -1,5 +1,4 @@
-import { useMemo } from 'react';
-import { useRole } from '@/contexts/RoleContext';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,22 +22,49 @@ import {
   TrendingUp,
   BarChart3,
 } from 'lucide-react';
-import { mockMeetings } from '@/data/mockMeetings';
-import { mockTutors } from '@/data/mockTutors';
+import type { Meeting } from '@/domain/entities/meeting';
+import { meetingService } from '@/application/services/meetingService';
 import { format, startOfWeek, eachDayOfInterval, subMonths, startOfMonth } from 'date-fns';
 
 export function DashboardScreen() {
-  const { role } = useRole();
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMeetings = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await meetingService.getAll();
+        if (!mounted) return;
+        setMeetings(data);
+      } catch (err) {
+        if (!mounted) return;
+        setError('Không thể tải dữ liệu dashboard.');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadMeetings();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Calculate summary statistics
   const stats = useMemo(() => {
-    const upcoming = mockMeetings.filter(m => m.status === 'Scheduled').length;
-    const total = mockMeetings.length;
-    const completed = mockMeetings.filter(m => m.status === 'Completed').length;
-    const activeTutors = new Set(mockMeetings.map(m => m.tutorId)).size;
+    const upcoming = meetings.filter((m) => m.status === 'Scheduled').length;
+    const total = meetings.length;
+    const completed = meetings.filter((m) => m.status === 'Completed').length;
+    const activeTutors = new Set(meetings.map((m) => m.tutorId)).size;
 
     return { upcoming, total, completed, activeTutors };
-  }, []);
+  }, [meetings]);
 
   // This Week's Meetings Data
   const weeklyMeetingsData = useMemo(() => {
@@ -54,8 +80,8 @@ export function DashboardScreen() {
     return dayNames.map((day, index) => {
       const dayDate = weekDays[index];
       const dayStr = format(dayDate, 'yyyy-MM-dd');
-      const count = mockMeetings.filter(
-        m => m.date === dayStr && m.status === 'Scheduled'
+      const count = meetings.filter(
+        (m) => m.date === dayStr && m.status === 'Scheduled',
       ).length;
       
       return {
@@ -63,7 +89,7 @@ export function DashboardScreen() {
         meetings: count,
       };
     });
-  }, []);
+  }, [meetings]);
 
   // Monthly Trend Data (Last 6 months)
   const monthlyTrendData = useMemo(() => {
@@ -75,7 +101,7 @@ export function DashboardScreen() {
       const monthStart = startOfMonth(monthDate);
       const monthStr = format(monthStart, 'yyyy-MM');
       
-      const count = mockMeetings.filter(m => {
+      const count = meetings.filter((m) => {
         const meetingMonth = m.date.substring(0, 7);
         return meetingMonth === monthStr;
       }).length;
@@ -87,14 +113,14 @@ export function DashboardScreen() {
     }
     
     return months;
-  }, []);
+  }, [meetings]);
 
   // Recent Meetings (Last 5, sorted by date)
   const recentMeetings = useMemo(() => {
-    return [...mockMeetings]
+    return [...meetings]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 5);
-  }, []);
+  }, [meetings]);
 
   const getRatingColor = (status: string) => {
     switch (status) {
@@ -108,6 +134,14 @@ export function DashboardScreen() {
         return 'bg-gray-500 text-white';
     }
   };
+
+  if (loading) {
+    return <div className="p-6 text-center text-muted-foreground">Đang tải dữ liệu tổng quan...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-center text-muted-foreground">{error}</div>;
+  }
 
   return (
     <div className="space-y-6">

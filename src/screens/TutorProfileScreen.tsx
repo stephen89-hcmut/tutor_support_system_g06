@@ -4,7 +4,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Star, Mail, Phone, MapPin, Globe, Calendar, Clock, Trophy, BookOpen, ThumbsUp } from 'lucide-react';
-import { mockTutors, Tutor } from '@/data/mockTutors';
+import type { TutorProfile } from '@/domain/entities/tutor';
+import { tutorService } from '@/application/services/tutorService';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import { cn } from '@/lib/utils';
 
 interface TutorProfileScreenProps {
@@ -13,17 +15,29 @@ interface TutorProfileScreenProps {
 }
 
 export function TutorProfileScreen({ tutorId, onBack }: TutorProfileScreenProps) {
-  const tutor = mockTutors.find(t => t.id === tutorId);
+  const { data: tutor, loading, error } = useAsyncData<TutorProfile | undefined>(() => tutorService.getById(tutorId), [tutorId]);
   const [activeTab, setActiveTab] = useState('education');
 
-  if (!tutor) {
+  if (loading) {
+    return (
+      <div className="p-4">
+        <Button variant="ghost" onClick={onBack} className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Search
+        </Button>
+        <p>Đang tải thông tin gia sư...</p>
+      </div>
+    );
+  }
+
+  if (error || !tutor) {
     return (
       <div>
         <Button variant="ghost" onClick={onBack} className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Search
         </Button>
-        <p>Tutor not found</p>
+        <p>{error ? 'Không thể tải thông tin gia sư.' : 'Tutor not found'}</p>
       </div>
     );
   }

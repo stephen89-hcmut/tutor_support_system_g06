@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +14,8 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ArrowLeft, AlertTriangle, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { mockMeetings, Meeting } from '@/data/mockMeetings';
+import type { Meeting } from '@/domain/entities/meeting';
+import { meetingService } from '@/application/services/meetingService';
 import { notificationManager } from '@/services/NotificationSystem';
 
 interface RescheduleMeetingScreenProps {
@@ -39,11 +39,29 @@ export function RescheduleMeetingScreen({
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [existingMeetings, setExistingMeetings] = useState<Meeting[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMeetings = async () => {
+      try {
+        const data = await meetingService.getAll();
+        if (!mounted) return;
+        setExistingMeetings(data);
+      } catch (err) {
+        // ignore
+      }
+    };
+    loadMeetings();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const checkForConflicts = (date: string, time: string): boolean => {
     // Check if the selected date and time conflicts with any existing scheduled meeting
-    const conflictingMeeting = mockMeetings.find(
+    const conflictingMeeting = existingMeetings.find(
       (m) =>
         m.id !== meeting.id &&
         m.status === 'Scheduled' &&
@@ -107,6 +125,10 @@ export function RescheduleMeetingScreen({
     }
 
     const dateString = format(selectedDate, 'yyyy-MM-dd');
+    await meetingService.update(meeting.id, { date: dateString, time: selectedTime });
+    setExistingMeetings((prev) =>
+      prev.map((m) => (m.id === meeting.id ? { ...m, date: dateString, time: selectedTime } : m)),
+    );
     onReschedule(meeting.id, dateString, selectedTime);
 
     // Send notifications
