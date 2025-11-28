@@ -278,11 +278,11 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3">
+                <div className="flex justify-center">
                   <Button
                     onClick={handleSignIn}
                     disabled={isAuthenticating || !username.trim() || !password.trim()}
-                    className="flex-1 bg-primary hover:bg-primary-dark h-12 text-base font-semibold"
+                    className="w-full max-w-md bg-primary hover:bg-primary-dark h-12 text-base font-semibold"
                     size="lg"
                   >
                     {isAuthenticating ? (
@@ -296,15 +296,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                         Đăng nhập
                       </>
                     )}
-                  </Button>
-                  <Button
-                    onClick={handleCancel}
-                    variant="outline"
-                    disabled={isAuthenticating}
-                    className="h-12 px-6 text-base"
-                    size="lg"
-                  >
-                    Xóa
                   </Button>
                 </div>
 
@@ -344,61 +335,41 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             </CardContent>
           </Card>
 
-          {/* Additional Information Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 max-w-5xl mx-auto">
-            {/* Language Selector */}
-            <Card className="shadow-lg border-0">
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-4 text-sm">Ngôn ngữ</h3>
-                <div className="flex gap-4">
-                  <button className="text-primary font-medium border-b-2 border-primary pb-1 text-sm">
-                    Tiếng Việt
-                  </button>
-                  <button className="text-muted-foreground hover:text-foreground text-sm">
-                    Tiếng Anh
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Notice Section */}
-            <Card className="shadow-lg border-0 md:col-span-2">
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-4 text-sm">Lưu ý</h3>
-                <div className="space-y-2 text-xs text-muted-foreground">
-                  <p>
-                    Trang đăng nhập này cho phép bạn đăng nhập một lần (Single Sign-On) để truy cập
-                    nhiều hệ thống web của Trường Đại học Bách khoa - ĐHQG TP.HCM.
-                  </p>
-                  <p>
-                    <strong className="text-foreground">Lưu ý bảo mật:</strong> Sau khi sử dụng
-                    xong các dịch vụ yêu cầu xác thực, vui lòng đăng xuất khỏi trình duyệt web để
-                    bảo vệ thông tin tài khoản của bạn.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Technical Support */}
-          <Card className="shadow-lg border-0 mt-6 max-w-5xl mx-auto">
+          {/* Notice Section - Aligned with login card */}
+          <Card className="shadow-lg border-0 max-w-2xl mx-auto mt-8">
             <CardContent className="p-6">
-              <h3 className="font-semibold mb-4 text-sm">Hỗ trợ kỹ thuật</h3>
-              <div className="flex flex-wrap gap-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a
-                    href="mailto:support@hcmut.edu.vn"
-                    className="text-primary hover:underline"
-                  >
-                    support@hcmut.edu.vn
-                  </a>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">
-                    ĐT: (84-8) 38647256 - 7204
-                  </span>
+              <h3 className="font-semibold mb-4 text-sm">Lưu ý</h3>
+              <div className="space-y-3 text-xs text-muted-foreground">
+                <p>
+                  Trang đăng nhập này cho phép bạn đăng nhập một lần (Single Sign-On) để truy cập
+                  nhiều hệ thống web của Trường Đại học Bách khoa - ĐHQG TP.HCM.
+                </p>
+                <p>
+                  <strong className="text-foreground">Lưu ý bảo mật:</strong> Sau khi sử dụng
+                  xong các dịch vụ yêu cầu xác thực, vui lòng đăng xuất khỏi trình duyệt web để
+                  bảo vệ thông tin tài khoản của bạn.
+                </p>
+                
+                {/* Technical Support - Inside Notice Section */}
+                <div className="pt-4 border-t">
+                  <h4 className="font-semibold mb-3 text-sm text-foreground">Hỗ trợ kỹ thuật</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <a
+                        href="mailto:support@hcmut.edu.vn"
+                        className="text-primary hover:underline"
+                      >
+                        support@hcmut.edu.vn
+                      </a>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">
+                        ĐT: (84-8) 38647256 - 7204
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>

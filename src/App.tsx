@@ -8,7 +8,8 @@ import { StudentManagementScreen } from './screens/StudentManagementScreen';
 import { StudentDetailScreen } from './screens/StudentDetailScreen';
 import { MeetingsScreen } from './screens/MeetingsScreen';
 import { DocumentLibraryScreen } from './screens/DocumentLibraryScreen';
-import { FindTutorScreen } from './screens/FindTutorScreen';
+import { BookMeetingScreen } from './screens/BookMeetingScreen';
+import { TutorProfileScreen } from './screens/TutorProfileScreen';
 import { AIFeedbackAnalysisScreen } from './screens/AIFeedbackAnalysisScreen';
 import { FeedbackScreen } from './screens/FeedbackScreen';
 import { MyProgressScreen } from './screens/MyProgressScreen';
@@ -110,8 +111,8 @@ function App() {
     const pageMap: Record<string, string> = {
       'dashboard': 'dashboard',
       'meetings': 'meetings',
-      'find-tutors': 'find-tutors',
-      'findtutors': 'find-tutors',
+      'book-meeting': 'book-meeting',
+      'bookmeeting': 'book-meeting',
       'my-progress': 'my-progress',
       'myprogress': 'my-progress',
       'library': 'library',
@@ -224,6 +225,7 @@ function App() {
         <MeetingsScreen
           onReschedule={handleRescheduleMeeting}
           onCancel={handleCancelMeeting}
+          onBookNewMeeting={() => setCurrentScreen('book-meeting')}
         />
       );
     }
@@ -233,9 +235,30 @@ function App() {
       return <DocumentLibraryScreen />;
     }
 
-    // Handle find tutors screen
-    if (currentScreen === 'find-tutors') {
-      return <FindTutorScreen />;
+    // Handle book meeting screen
+    if (currentScreen === 'book-meeting') {
+      return (
+        <BookMeetingScreen
+          onViewTutorProfile={(tutorId) => {
+            setCurrentStudentId(tutorId); // Reuse for tutor ID
+            setPreviousScreen(currentScreen);
+            setCurrentScreen('tutorProfile');
+          }}
+        />
+      );
+    }
+
+    // Handle tutor profile screen
+    if (currentScreen === 'tutorProfile' && currentStudentId) {
+      return (
+        <TutorProfileScreen
+          tutorId={currentStudentId}
+          onBack={() => {
+            setCurrentScreen(previousScreen);
+            setCurrentStudentId(null);
+          }}
+        />
+      );
     }
 
     // Handle AI Feedback Analysis screen
@@ -289,7 +312,7 @@ function App() {
     // Default screen content
     const screenMap: Record<string, string> = {
       'meetings': 'Meetings',
-      'find-tutors': 'Find Tutors',
+      'book-meeting': 'Book Meeting',
       'my-progress': 'My Progress',
       'library': 'Library',
       'settings': 'Settings',

@@ -35,7 +35,7 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
   Student: [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'meetings', label: 'Meetings', icon: Video },
-    { id: 'find-tutors', label: 'Find Tutors', icon: Search },
+    { id: 'book-meeting', label: 'Book Meeting', icon: Search },
     { id: 'my-progress', label: 'My Progress', icon: TrendingUp },
     { id: 'library', label: 'Library', icon: BookOpen },
     { id: 'settings', label: 'Settings', icon: Settings },

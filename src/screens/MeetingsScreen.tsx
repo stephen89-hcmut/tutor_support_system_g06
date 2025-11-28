@@ -30,6 +30,7 @@ interface MeetingsScreenProps {
 export function MeetingsScreen({
   onReschedule,
   onCancel,
+  onBookNewMeeting,
 }: MeetingsScreenProps) {
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -101,7 +102,7 @@ export function MeetingsScreen({
           <h1 className="text-3xl font-bold">Meetings</h1>
           <p className="text-muted-foreground">Manage your scheduled meetings</p>
         </div>
-        <Button className="bg-primary hover:bg-primary-dark">
+        <Button className="bg-primary hover:bg-primary-dark" onClick={onBookNewMeeting}>
           <Calendar className="mr-2 h-4 w-4" />
           Book New Meeting
         </Button>
