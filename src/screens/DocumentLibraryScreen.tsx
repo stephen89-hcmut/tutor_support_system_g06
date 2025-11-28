@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRole } from '@/contexts/RoleContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,12 +28,14 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, Search, Grid, List, Download, Share2, MoreVertical, Lock, Globe, Shield } from 'lucide-react';
-import type { Document, AccessLevel, DocumentType } from '@/domain/entities/document';
+import type { Document, AccessLevel, DocumentType, FileFormat } from '@/domain/entities/document';
+import { MaterialVisibility } from '@/domain/enums';
+import type { MaterialFilterDto, MaterialMetadataDto } from '@/domain/dtos';
 import { materialService } from '@/application/services/materialService';
 import { useToast } from '@/components/ui/use-toast';
 
 export function DocumentLibraryScreen() {
-  const { role } = useRole();
+  const { role, userId } = useRole();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [accessLevelFilter, setAccessLevelFilter] = useState<string>('all');
@@ -47,33 +49,25 @@ export function DocumentLibraryScreen() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Get current user ID (mock - in real app, get from auth context)
-  const currentUserId = role === 'Student' ? 's1' : role === 'Tutor' ? 't1' : 'm1';
+  const currentUserId = userId ?? 'demo-user';
+
+  const refreshMaterials = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const filter: MaterialFilterDto = {};
+      const data = await materialService.searchMaterials(searchQuery, filter);
+      setDocuments(data);
+    } catch (err) {
+      setError('Không thể tải thư viện tài liệu.');
+    } finally {
+      setLoading(false);
+    }
+  }, [searchQuery]);
 
   useEffect(() => {
-    let mounted = true;
-    const loadDocuments = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await materialService.list();
-        if (!mounted) return;
-        setDocuments(data);
-      } catch (err) {
-        if (!mounted) return;
-        setError('Không thể tải thư viện tài liệu.');
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadDocuments();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    refreshMaterials();
+  }, [refreshMaterials]);
 
   // Filter documents based on role and access level
   const filteredDocuments = useMemo(() => {
@@ -135,26 +129,24 @@ export function DocumentLibraryScreen() {
   }, [filteredDocuments]);
 
   const handleDelete = (document: Document) => {
-    // In real app, this would call an API
-    console.log('Delete document:', document.id);
     toast({
       title: 'Document Deleted',
       description: `"${document.title}" has been deleted.`,
     });
   };
 
-  const handleShare = (document: Document) => {
-    const shareLink = `${window.location.origin}/library/${document.id}`;
-    navigator.clipboard.writeText(shareLink);
+  const handleShare = async (document: Document) => {
+    const success = await materialService.shareMaterial(document.id, currentUserId, 't1');
     toast({
-      title: 'Link Copied',
-      description: 'Document link has been copied to clipboard.',
+      title: success ? 'Material Shared' : 'Share Failed',
+      description: success ? 'Tài liệu đã được chia sẻ.' : 'Không thể chia sẻ tài liệu.',
     });
   };
 
   const handleDownload = (document: Document) => {
-    // In real app, this would trigger a download
-    console.log('Download document:', document.id);
+    if (document.fileUrl) {
+      window.open(document.fileUrl, '_blank');
+    }
     toast({
       title: 'Download Started',
       description: `Downloading "${document.title}"...`,
@@ -351,6 +343,7 @@ export function DocumentLibraryScreen() {
         open={showUploadModal}
         onOpenChange={setShowUploadModal}
         currentUserId={currentUserId}
+        onUploaded={refreshMaterials}
       />
 
       {/* Manage Access Modal */}
@@ -511,50 +504,65 @@ interface UploadDocumentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentUserId: string;
+  onUploaded?: () => void;
 }
 
 function UploadDocumentModal({
   open,
   onOpenChange,
   currentUserId,
+  onUploaded,
 }: UploadDocumentModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<DocumentType>('Lecture Notes');
-  const [accessLevel, setAccessLevel] = useState<AccessLevel>('public');
+  const [visibility, setVisibility] = useState<MaterialVisibility>(MaterialVisibility.PUBLIC);
+  const [format, setFormat] = useState<FileFormat>('PDF');
+  const [file, setFile] = useState<File | null>(null);
   const { toast } = useToast();
-  const { role } = useRole();
 
-  const handleUpload = () => {
-    if (!title.trim()) {
+  const handleUpload = async () => {
+    if (!title.trim() || !file) {
       toast({
         variant: 'error',
-        title: 'Error',
-        description: 'Please enter a document title.',
+        title: 'Missing Information',
+        description: 'Please provide title and file.',
       });
       return;
     }
 
-    // In real app, this would upload to server
-    console.log('Upload document:', {
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        variant: 'error',
+        title: 'File Too Large',
+        description: 'File must be <= 10MB.',
+      });
+      return;
+    }
+
+    const metadata: MaterialMetadataDto = {
       title,
       description,
       type,
-      accessLevel,
-      uploadedBy: currentUserId,
-    });
+      visibility,
+      format,
+    };
+
+    await materialService.uploadMaterial(file, metadata, currentUserId);
 
     toast({
       title: 'Document Uploaded',
       description: `"${title}" has been uploaded successfully.`,
     });
 
-    // Reset form
     setTitle('');
     setDescription('');
     setType('Lecture Notes');
-    setAccessLevel('public');
+    setVisibility(MaterialVisibility.PUBLIC);
+    setFormat('PDF');
+    setFile(null);
     onOpenChange(false);
+    onUploaded?.();
   };
 
   return (
@@ -609,26 +617,43 @@ function UploadDocumentModal({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="access">Access Level</Label>
-              <Select
-                value={accessLevel}
-                onValueChange={(value) => setAccessLevel(value as AccessLevel)}
-              >
-                <SelectTrigger id="access">
+              <Label htmlFor="visibility">Visibility</Label>
+              <Select value={visibility} onValueChange={(value) => setVisibility(value as MaterialVisibility)}>
+                <SelectTrigger id="visibility">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="public">Public</SelectItem>
-                  <SelectItem value="restricted">Restricted</SelectItem>
-                  {role === 'Manager' && <SelectItem value="private">Private</SelectItem>}
+                  <SelectItem value={MaterialVisibility.PUBLIC}>Public</SelectItem>
+                  <SelectItem value={MaterialVisibility.TUTOR_ONLY}>Tutor Only</SelectItem>
+                  <SelectItem value={MaterialVisibility.SESSION_ONLY}>Session Only</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="format">Format</Label>
+            <Select value={format} onValueChange={(value) => setFormat(value as FileFormat)}>
+              <SelectTrigger id="format">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PDF">PDF</SelectItem>
+                <SelectItem value="DOCX">DOCX</SelectItem>
+                <SelectItem value="ZIP">ZIP</SelectItem>
+                <SelectItem value="PPTX">PPTX</SelectItem>
+                <SelectItem value="XLSX">XLSX</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="file">File</Label>
-            <Input id="file" type="file" />
+            <Input
+              id="file"
+              type="file"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
           </div>
         </div>
 

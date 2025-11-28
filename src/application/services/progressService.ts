@@ -1,4 +1,5 @@
 import type { ProgressRecord } from '@/domain/entities/progress';
+import type { ProgressUpdateDto } from '@/domain/dtos';
 import { calculateAverageMetrics, calculateOverallPerformance, getProgressTrend } from '@/domain/services/progressMetrics';
 import { mockProgressRepository } from '@/infrastructure/mockApi/repositories/progressRepository';
 
@@ -19,6 +20,11 @@ class ProgressService {
 
   async addRecord(record: ProgressRecord) {
     return mockProgressRepository.create(record);
+  }
+
+  async updateProgress(progressId: string, newData: ProgressUpdateDto): Promise<boolean> {
+    const record = await mockProgressRepository.update(progressId, newData);
+    return Boolean(record);
   }
 }
 

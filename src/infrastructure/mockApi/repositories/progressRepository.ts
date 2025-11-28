@@ -38,6 +38,14 @@ class MockProgressRepository {
     mockProgressRecords.push(record);
     return record;
   }
+
+  async update(progressId: string, update: Partial<ProgressRecord>): Promise<ProgressRecord | undefined> {
+    await simulateNetworkLatency();
+    const index = mockProgressRecords.findIndex((record) => record.recordId === progressId);
+    if (index === -1) return undefined;
+    mockProgressRecords[index] = { ...mockProgressRecords[index], ...update };
+    return mockProgressRecords[index];
+  }
 }
 
 export const mockProgressRepository = new MockProgressRepository();

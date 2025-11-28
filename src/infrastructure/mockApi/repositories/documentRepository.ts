@@ -12,6 +12,20 @@ class MockDocumentRepository {
     await simulateNetworkLatency();
     return mockDocuments.find((doc) => doc.id === documentId);
   }
+
+  async create(document: Document): Promise<Document> {
+    await simulateNetworkLatency();
+    mockDocuments.push(document);
+    return document;
+  }
+
+  async update(documentId: string, update: Partial<Document>): Promise<Document | undefined> {
+    await simulateNetworkLatency();
+    const index = mockDocuments.findIndex((doc) => doc.id === documentId);
+    if (index === -1) return undefined;
+    mockDocuments[index] = { ...mockDocuments[index], ...update };
+    return mockDocuments[index];
+  }
 }
 
 export const mockDocumentRepository = new MockDocumentRepository();

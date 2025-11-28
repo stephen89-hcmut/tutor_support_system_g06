@@ -1,3 +1,5 @@
+import { MaterialVisibility } from '../enums';
+
 export type AccessLevel = 'public' | 'restricted' | 'private';
 export type DocumentType =
   | 'Lecture Notes'
@@ -22,5 +24,9 @@ export interface Document {
   uploadedByName: string;
   uploadDate: string;
   category?: string;
+  fileUrl?: string;
+  visibility?: MaterialVisibility;
+  courseIds?: string[];
+  topicIds?: string[];
 }
 
