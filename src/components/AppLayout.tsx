@@ -14,7 +14,9 @@ import {
   LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { getCurrentUserProfile } from '@/data/mockUserProfile';
 
 interface AppLayoutProps {
   currentScreen: string;
@@ -60,6 +62,27 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
 export function AppLayout({ currentScreen, onNavigate, onLogout, children }: AppLayoutProps) {
   const { role } = useRole();
   const menuItems = menuItemsByRole[role] || [];
+  const userProfile = getCurrentUserProfile(role);
+
+  const getRoleColor = () => {
+    switch (role) {
+      case 'Student':
+        return 'bg-blue-500 text-white';
+      case 'Tutor':
+        return 'bg-green-500 text-white';
+      case 'Manager':
+        return 'bg-orange-500 text-white';
+      default:
+        return 'bg-gray-500 text-white';
+    }
+  };
+
+  const getDisplayId = () => {
+    if (userProfile.studentId) return `ID: ${userProfile.studentId}`;
+    if (userProfile.tutorId) return `ID: ${userProfile.tutorId}`;
+    if (userProfile.managerId) return `ID: ${userProfile.managerId}`;
+    return `ID: ${userProfile.userId}`;
+  };
 
   return (
     <div className="flex flex-1 bg-background">
@@ -67,7 +90,24 @@ export function AppLayout({ currentScreen, onNavigate, onLogout, children }: App
       <aside className="w-64 bg-white border-r border-border flex flex-col">
         <div className="p-6 border-b border-border">
           <h1 className="text-xl font-bold text-primary">HCMUT Tutor System</h1>
-          <p className="text-sm text-muted-foreground mt-1">{role}</p>
+          
+          {/* User Info Section */}
+          <div className="mt-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg flex-shrink-0">
+                {userProfile.initials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">{userProfile.fullName}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge className={cn('text-xs', getRoleColor())}>
+                    {role}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">{getDisplayId()}</p>
+              </div>
+            </div>
+          </div>
         </div>
         
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -92,16 +132,16 @@ export function AppLayout({ currentScreen, onNavigate, onLogout, children }: App
           })}
         </nav>
 
-        {/* Logout Button */}
+        {/* Logout Button - Always at bottom */}
         {onLogout && (
-          <div className="p-4 border-t border-border">
+          <div className="p-4 border-t border-border mt-auto">
             <Button
               variant="ghost"
               className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
               onClick={onLogout}
             >
               <LogOut className="mr-2 h-5 w-5" />
-              Logout
+              Sign Out
             </Button>
           </div>
         )}

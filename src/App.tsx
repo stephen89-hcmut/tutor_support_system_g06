@@ -14,6 +14,7 @@ import { FeedbackScreen } from './screens/FeedbackScreen';
 import { MyProgressScreen } from './screens/MyProgressScreen';
 import { RecordProgressScreen } from './screens/RecordProgressScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
 import { mockMeetings } from './data/mockMeetings';
 
 function App() {
@@ -248,6 +249,11 @@ function App() {
       );
     }
 
+    // Handle settings screen
+    if (currentScreen === 'settings') {
+      return <SettingsScreen />;
+    }
+
     // Handle dashboard screen
     if (currentScreen === 'dashboard') {
       return <DashboardScreen />;
@@ -284,7 +290,11 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <AppLayout currentScreen={currentScreen} onNavigate={handleNavigate} onLogout={handleLogout}>
+      <AppLayout
+        currentScreen={currentScreen}
+        onNavigate={handleNavigate}
+        onLogout={handleLogout}
+      >
         {renderScreenContent()}
       </AppLayout>
       <Footer />
