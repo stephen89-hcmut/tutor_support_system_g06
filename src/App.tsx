@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import { AppLayout } from './components/AppLayout';
 import { useRole } from './contexts/RoleContext';
+import { StudentManagementScreen } from './screens/StudentManagementScreen';
+import { StudentDetailScreen } from './screens/StudentDetailScreen';
+import { MeetingsScreen } from './screens/MeetingsScreen';
+import { mockMeetings } from './data/mockMeetings';
 
 function App() {
   const { role } = useRole();
   const [currentScreen, setCurrentScreen] = useState<string>('dashboard');
+  const [currentStudentId, setCurrentStudentId] = useState<string | null>(null);
+  const [previousScreen, setPreviousScreen] = useState<string>('students');
 
   const handleNavigate = (page: string) => {
     // Normalize page names to handle different variations
@@ -41,7 +47,101 @@ function App() {
     setCurrentScreen(mappedPage);
   };
 
+  const handleViewStudent = (studentId: string) => {
+    setCurrentStudentId(studentId);
+    setPreviousScreen(currentScreen);
+    setCurrentScreen('studentDetail');
+  };
+
+  const handleBack = () => {
+    setCurrentScreen(previousScreen);
+    setCurrentStudentId(null);
+  };
+
+  const handleRecordProgress = (studentId: string) => {
+    // For now, just show an alert. In a real app, this would open a modal or navigate
+    console.log('Record progress for student:', studentId);
+    alert('Record Progress functionality - would open modal or navigate to record progress screen');
+  };
+
+  const handleViewProgress = (studentId: string) => {
+    // For now, just show an alert. In a real app, this would navigate to progress view
+    console.log('View progress for student:', studentId);
+    alert('View Progress functionality - would navigate to progress view screen');
+  };
+
+  const handleViewFeedback = (studentId: string) => {
+    // Navigate to student detail and show feedback tab
+    setCurrentStudentId(studentId);
+    setPreviousScreen(currentScreen);
+    setCurrentScreen('studentDetail');
+    // Note: In a real app, you might want to pass a prop to open the feedback tab
+  };
+
+  const handleViewAllFeedback = (studentId: string) => {
+    // Navigate to feedback screen or show all feedback
+    console.log('View all feedback for student:', studentId);
+    // For now, we're already on the detail screen, so this could scroll to feedback tab
+  };
+
+  const handleExport = (studentId: string) => {
+    console.log('Export data for student:', studentId);
+    alert('Export functionality - would download student data');
+  };
+
+  const handleCancelMeeting = (meetingId: string, cancelledBy: string, reason: string) => {
+    // Update meeting status in mock data
+    const meeting = mockMeetings.find(m => m.id === meetingId);
+    if (meeting) {
+      meeting.status = 'Cancelled';
+      meeting.cancelledBy = cancelledBy as any;
+      meeting.cancellationReason = reason;
+    }
+    console.log('Meeting cancelled:', meetingId, cancelledBy, reason);
+  };
+
+  const handleRescheduleMeeting = (meetingId: string) => {
+    // This is handled within MeetingsScreen
+    console.log('Reschedule meeting:', meetingId);
+  };
+
   const renderScreenContent = () => {
+    // Handle student detail screen
+    if (currentScreen === 'studentDetail' && currentStudentId) {
+      return (
+        <StudentDetailScreen
+          studentId={currentStudentId}
+          onBack={handleBack}
+          onRecordProgress={handleRecordProgress}
+          onViewProgress={handleViewProgress}
+          onViewAllFeedback={handleViewAllFeedback}
+          onExport={handleExport}
+        />
+      );
+    }
+
+    // Handle students management screen
+    if (currentScreen === 'students') {
+      return (
+        <StudentManagementScreen
+          onViewStudent={handleViewStudent}
+          onViewProgress={handleViewProgress}
+          onViewFeedback={handleViewFeedback}
+        />
+      );
+    }
+
+    // Handle meetings screen
+    if (currentScreen === 'meetings') {
+      return (
+        <MeetingsScreen
+          onReschedule={handleRescheduleMeeting}
+          onCancel={handleCancelMeeting}
+        />
+      );
+    }
+
+    // Default screen content
     const screenMap: Record<string, string> = {
       'dashboard': 'Dashboard',
       'meetings': 'Meetings',
@@ -49,7 +149,6 @@ function App() {
       'my-progress': 'My Progress',
       'library': 'Library',
       'settings': 'Settings',
-      'students': 'My Students',
       'feedback': 'Feedback',
       'users': 'Users',
       'permissions': 'Permissions',

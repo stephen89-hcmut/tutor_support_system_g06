@@ -1,0 +1,263 @@
+export interface Student {
+  id: string;
+  name: string;
+  studentId: string;
+  progress: number; // 0-100
+  status: 'Active' | 'At Risk' | 'Inactive';
+  rating: number; // 0-5
+  email: string;
+  phone: string;
+  joinDate: string;
+  lastSession: string;
+  totalSessions: number;
+  personalInfo: {
+    dateOfBirth: string;
+    address: string;
+    major: string;
+    year: number;
+  };
+  sessionHistory: Array<{
+    id: string;
+    date: string;
+    duration: number;
+    topic: string;
+    notes: string;
+  }>;
+  progressData: Array<{
+    date: string;
+    score: number;
+    category: string;
+  }>;
+  feedback: Array<{
+    id: string;
+    date: string;
+    message: string;
+    status: 'Pending' | 'Responded';
+    response?: string;
+  }>;
+}
+
+export const mockStudents: Student[] = [
+  {
+    id: '1',
+    name: 'Nguyen Van A',
+    studentId: 'STU001',
+    progress: 85,
+    status: 'Active',
+    rating: 4.5,
+    email: 'nguyenvana@student.hcmut.edu.vn',
+    phone: '0901234567',
+    joinDate: '2024-01-15',
+    lastSession: '2024-11-20',
+    totalSessions: 24,
+    personalInfo: {
+      dateOfBirth: '2003-05-20',
+      address: '123 Le Loi, Ho Chi Minh City',
+      major: 'Computer Science',
+      year: 3,
+    },
+    sessionHistory: [
+      {
+        id: 's1',
+        date: '2024-11-20',
+        duration: 60,
+        topic: 'Data Structures - Binary Trees',
+        notes: 'Good understanding of concepts, needs practice with implementation.',
+      },
+      {
+        id: 's2',
+        date: '2024-11-15',
+        duration: 45,
+        topic: 'Algorithms - Sorting',
+        notes: 'Excellent progress on sorting algorithms.',
+      },
+    ],
+    progressData: [
+      { date: '2024-09-01', score: 70, category: 'Midterm' },
+      { date: '2024-10-01', score: 80, category: 'Assignment' },
+      { date: '2024-11-01', score: 85, category: 'Final' },
+    ],
+    feedback: [
+      {
+        id: 'f1',
+        date: '2024-11-18',
+        message: 'The session was very helpful. Can we cover more advanced topics?',
+        status: 'Responded',
+        response: 'Thank you for the feedback! We will cover advanced topics in the next session.',
+      },
+      {
+        id: 'f2',
+        date: '2024-11-22',
+        message: 'I need more practice problems on binary trees.',
+        status: 'Pending',
+      },
+    ],
+  },
+  {
+    id: '2',
+    name: 'Tran Thi B',
+    studentId: 'STU002',
+    progress: 45,
+    status: 'At Risk',
+    rating: 3.2,
+    email: 'tranthib@student.hcmut.edu.vn',
+    phone: '0902345678',
+    joinDate: '2024-02-10',
+    lastSession: '2024-11-10',
+    totalSessions: 12,
+    personalInfo: {
+      dateOfBirth: '2004-08-15',
+      address: '456 Nguyen Hue, Ho Chi Minh City',
+      major: 'Software Engineering',
+      year: 2,
+    },
+    sessionHistory: [
+      {
+        id: 's3',
+        date: '2024-11-10',
+        duration: 30,
+        topic: 'Basic Programming Concepts',
+        notes: 'Struggling with loops and conditionals. Needs more practice.',
+      },
+    ],
+    progressData: [
+      { date: '2024-09-01', score: 50, category: 'Midterm' },
+      { date: '2024-10-01', score: 45, category: 'Assignment' },
+      { date: '2024-11-01', score: 40, category: 'Final' },
+    ],
+    feedback: [
+      {
+        id: 'f3',
+        date: '2024-11-12',
+        message: 'I am finding it difficult to keep up. Can we slow down?',
+        status: 'Pending',
+      },
+    ],
+  },
+  {
+    id: '3',
+    name: 'Le Van C',
+    studentId: 'STU003',
+    progress: 92,
+    status: 'Active',
+    rating: 4.8,
+    email: 'levanc@student.hcmut.edu.vn',
+    phone: '0903456789',
+    joinDate: '2024-01-20',
+    lastSession: '2024-11-21',
+    totalSessions: 30,
+    personalInfo: {
+      dateOfBirth: '2003-03-10',
+      address: '789 Vo Van Tan, Ho Chi Minh City',
+      major: 'Computer Science',
+      year: 4,
+    },
+    sessionHistory: [
+      {
+        id: 's4',
+        date: '2024-11-21',
+        duration: 90,
+        topic: 'Advanced Algorithms - Dynamic Programming',
+        notes: 'Excellent grasp of DP concepts. Ready for competitive programming.',
+      },
+    ],
+    progressData: [
+      { date: '2024-09-01', score: 88, category: 'Midterm' },
+      { date: '2024-10-01', score: 90, category: 'Assignment' },
+      { date: '2024-11-01', score: 92, category: 'Final' },
+    ],
+    feedback: [
+      {
+        id: 'f4',
+        date: '2024-11-19',
+        message: 'Great teaching style! Very clear explanations.',
+        status: 'Responded',
+        response: 'Thank you! Keep up the excellent work!',
+      },
+    ],
+  },
+  {
+    id: '4',
+    name: 'Pham Thi D',
+    studentId: 'STU004',
+    progress: 78,
+    status: 'Active',
+    rating: 4.0,
+    email: 'phamthid@student.hcmut.edu.vn',
+    phone: '0904567890',
+    joinDate: '2024-03-05',
+    lastSession: '2024-11-19',
+    totalSessions: 18,
+    personalInfo: {
+      dateOfBirth: '2004-11-25',
+      address: '321 Tran Hung Dao, Ho Chi Minh City',
+      major: 'Information Systems',
+      year: 2,
+    },
+    sessionHistory: [
+      {
+        id: 's5',
+        date: '2024-11-19',
+        duration: 60,
+        topic: 'Database Design',
+        notes: 'Good understanding of normalization. Needs work on indexing.',
+      },
+    ],
+    progressData: [
+      { date: '2024-09-01', score: 70, category: 'Midterm' },
+      { date: '2024-10-01', score: 75, category: 'Assignment' },
+      { date: '2024-11-01', score: 78, category: 'Final' },
+    ],
+    feedback: [
+      {
+        id: 'f5',
+        date: '2024-11-20',
+        message: 'Can we have more examples on database queries?',
+        status: 'Pending',
+      },
+    ],
+  },
+  {
+    id: '5',
+    name: 'Hoang Van E',
+    studentId: 'STU005',
+    progress: 65,
+    status: 'Active',
+    rating: 3.8,
+    email: 'hoangvane@student.hcmut.edu.vn',
+    phone: '0905678901',
+    joinDate: '2024-02-28',
+    lastSession: '2024-11-18',
+    totalSessions: 15,
+    personalInfo: {
+      dateOfBirth: '2003-07-30',
+      address: '654 Pasteur, Ho Chi Minh City',
+      major: 'Computer Engineering',
+      year: 3,
+    },
+    sessionHistory: [
+      {
+        id: 's6',
+        date: '2024-11-18',
+        duration: 45,
+        topic: 'Object-Oriented Programming',
+        notes: 'Understanding classes and objects. Needs practice with inheritance.',
+      },
+    ],
+    progressData: [
+      { date: '2024-09-01', score: 60, category: 'Midterm' },
+      { date: '2024-10-01', score: 65, category: 'Assignment' },
+      { date: '2024-11-01', score: 65, category: 'Final' },
+    ],
+    feedback: [
+      {
+        id: 'f6',
+        date: '2024-11-17',
+        message: 'The OOP concepts are getting clearer. Thank you!',
+        status: 'Responded',
+        response: 'You are welcome! Keep practicing!',
+      },
+    ],
+  },
+];
+
