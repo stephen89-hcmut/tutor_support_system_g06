@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppLayout } from './components/AppLayout';
 import { useRole } from './contexts/RoleContext';
+import { LoginScreen } from './screens/LoginScreen';
+import { Header } from './components/Header';
+import { Footer } from './components/Footer';
 import { StudentManagementScreen } from './screens/StudentManagementScreen';
 import { StudentDetailScreen } from './screens/StudentDetailScreen';
 import { MeetingsScreen } from './screens/MeetingsScreen';
@@ -10,16 +13,55 @@ import { AIFeedbackAnalysisScreen } from './screens/AIFeedbackAnalysisScreen';
 import { FeedbackScreen } from './screens/FeedbackScreen';
 import { MyProgressScreen } from './screens/MyProgressScreen';
 import { RecordProgressScreen } from './screens/RecordProgressScreen';
+import { DashboardScreen } from './screens/DashboardScreen';
 import { mockMeetings } from './data/mockMeetings';
 
 function App() {
-  const { role } = useRole();
+  const { role, setRole } = useRole();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<string>('dashboard');
   const [currentStudentId, setCurrentStudentId] = useState<string | null>(null);
   const [previousScreen, setPreviousScreen] = useState<string>('students');
   const [showAIFeedbackAnalysis, setShowAIFeedbackAnalysis] = useState(false);
   const [showRecordProgress, setShowRecordProgress] = useState(false);
   const [recordProgressStudentId, setRecordProgressStudentId] = useState<string | null>(null);
+
+  // Check for existing authentication on mount
+  useEffect(() => {
+    const token = localStorage.getItem('hcmut_auth_token') || sessionStorage.getItem('hcmut_auth_token');
+    const savedRole = localStorage.getItem('hcmut_user_role') || sessionStorage.getItem('hcmut_user_role');
+    
+    if (token && savedRole) {
+      setRole(savedRole as 'Student' | 'Tutor' | 'Manager');
+      setIsAuthenticated(true);
+    }
+  }, [setRole]);
+
+  const handleLogin = (loginRole: 'Student' | 'Tutor' | 'Manager') => {
+    setRole(loginRole);
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('hcmut_auth_token');
+    localStorage.removeItem('hcmut_user_role');
+    localStorage.removeItem('hcmut_token_data');
+    sessionStorage.removeItem('hcmut_auth_token');
+    sessionStorage.removeItem('hcmut_user_role');
+    setIsAuthenticated(false);
+    setCurrentScreen('dashboard');
+  };
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <LoginScreen onLogin={handleLogin} />
+        <Footer />
+      </div>
+    );
+  }
 
   const handleNavigate = (page: string) => {
     // Normalize page names to handle different variations
@@ -206,9 +248,13 @@ function App() {
       );
     }
 
+    // Handle dashboard screen
+    if (currentScreen === 'dashboard') {
+      return <DashboardScreen />;
+    }
+
     // Default screen content
     const screenMap: Record<string, string> = {
-      'dashboard': 'Dashboard',
       'meetings': 'Meetings',
       'find-tutors': 'Find Tutors',
       'my-progress': 'My Progress',
@@ -236,9 +282,13 @@ function App() {
   };
 
   return (
-    <AppLayout currentScreen={currentScreen} onNavigate={handleNavigate}>
-      {renderScreenContent()}
-    </AppLayout>
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <AppLayout currentScreen={currentScreen} onNavigate={handleNavigate} onLogout={handleLogout}>
+        {renderScreenContent()}
+      </AppLayout>
+      <Footer />
+    </div>
   );
 }
 

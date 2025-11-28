@@ -10,7 +10,8 @@ import {
   Users,
   Shield,
   BarChart3,
-  MessageSquare
+  MessageSquare,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,7 @@ import { cn } from '@/lib/utils';
 interface AppLayoutProps {
   currentScreen: string;
   onNavigate: (page: string) => void;
+  onLogout?: () => void;
   children?: React.ReactNode;
 }
 
@@ -55,12 +57,12 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
   ],
 };
 
-export function AppLayout({ currentScreen, onNavigate, children }: AppLayoutProps) {
+export function AppLayout({ currentScreen, onNavigate, onLogout, children }: AppLayoutProps) {
   const { role } = useRole();
   const menuItems = menuItemsByRole[role] || [];
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex flex-1 bg-background">
       {/* Fixed Sidebar */}
       <aside className="w-64 bg-white border-r border-border flex flex-col">
         <div className="p-6 border-b border-border">
@@ -89,6 +91,20 @@ export function AppLayout({ currentScreen, onNavigate, children }: AppLayoutProp
             );
           })}
         </nav>
+
+        {/* Logout Button */}
+        {onLogout && (
+          <div className="p-4 border-t border-border">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={onLogout}
+            >
+              <LogOut className="mr-2 h-5 w-5" />
+              Logout
+            </Button>
+          </div>
+        )}
       </aside>
 
       {/* Scrollable Main Content */}
