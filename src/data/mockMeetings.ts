@@ -1,418 +1,172 @@
 import type { Meeting } from '@/domain/entities/meeting';
+import { mockStudentAccounts } from './mockUsers';
+import { mockTutorAccounts } from './mockUsers';
 
-export const mockMeetings: Meeting[] = [
-  {
-    id: 'm1',
-    date: '2024-11-28',
-    time: '09:00',
-    studentId: '1',
-    studentName: 'Nguyen Van A',
-    tutorId: 't1',
-    tutorName: 'Dr. Tran Minh',
-    topic: 'Calculus I',
-    mode: 'Zoom',
-    link: 'https://zoom.us/j/123456789',
-    status: 'Scheduled',
-  },
-  {
-    id: 'm2',
-    date: '2024-11-29',
-    time: '14:00',
-    studentId: '2',
-    studentName: 'Le Thi B',
-    tutorId: 't2',
-    tutorName: 'Prof. Pham Hoa',
-    topic: 'Physics II',
-    mode: 'In-Person',
-    location: 'Room A3.201',
-    status: 'Scheduled',
-  },
-  {
-    id: 'm3',
-    date: '2024-11-30',
-    time: '10:30',
-    studentId: '3',
-    studentName: 'Tran Van C',
-    tutorId: 't3',
-    tutorName: 'Dr. Nguyen Lan',
-    topic: 'Data Structures',
-    mode: 'Teams',
-    link: 'https://teams.microsoft.com/l/meetup-join/...',
-    status: 'Scheduled',
-  },
-  {
-    id: 'm4',
-    date: '2024-11-25',
-    time: '15:00',
-    studentId: '1',
-    studentName: 'Nguyen Van A',
-    tutorId: 't1',
-    tutorName: 'Dr. Tran Minh',
-    topic: 'Calculus I',
-    mode: 'Zoom',
-    link: 'https://zoom.us/j/123456789',
-    status: 'Completed',
-  },
-  {
-    id: 'm5',
-    date: '2024-11-26',
-    time: '11:00',
-    studentId: '4',
-    studentName: 'Pham Thi D',
-    tutorId: 't2',
-    tutorName: 'Prof. Pham Hoa',
-    topic: 'Database Design',
-    mode: 'In-Person',
-    location: 'Room A3.201',
-    status: 'Completed',
-  },
-  {
-    id: 'm6',
-    date: '2024-11-27',
-    time: '16:00',
-    studentId: '5',
-    studentName: 'Hoang Van E',
-    tutorId: 't3',
-    tutorName: 'Dr. Nguyen Lan',
-    topic: 'Object-Oriented Programming',
-    mode: 'Teams',
-    link: 'https://teams.microsoft.com/l/meetup-join/...',
-    status: 'Cancelled',
-    cancelledBy: 'Student',
-    cancellationReason: 'Personal emergency',
-  },
-  // Additional meetings for dashboard charts
-  {
-    id: 'm7',
-    date: '2024-10-30',
-    time: '09:00',
-    studentId: '1',
-    studentName: 'Nguyen Van A',
-    tutorId: 't1',
-    tutorName: 'Dr. Nguyen Van A',
-    topic: 'Data Structures Review',
-    mode: 'Zoom',
-    link: 'https://zoom.us/j/123456789',
-    status: 'Scheduled',
-  },
-  {
-    id: 'm8',
-    date: '2024-10-30',
-    time: '14:00',
-    studentId: '2',
-    studentName: 'Le Thi B',
-    tutorId: 't2',
-    tutorName: 'Dr. Tran Thi B',
-    topic: 'Machine Learning Discussion',
-    mode: 'In-Person',
-    location: 'Room A3.201',
-    status: 'Scheduled',
-  },
-  {
-    id: 'm9',
-    date: '2024-10-29',
-    time: '10:00',
-    studentId: '3',
-    studentName: 'Tran Van C',
-    tutorId: 't3',
-    tutorName: 'Dr. Le Van C',
-    topic: 'Database Design',
-    mode: 'Teams',
-    link: 'https://teams.microsoft.com/l/meetup-join/...',
-    status: 'Completed',
-  },
-  // More meetings for weekly chart
-  {
-    id: 'm10',
-    date: '2024-11-25',
-    time: '08:00',
-    studentId: '1',
-    studentName: 'Nguyen Van A',
-    tutorId: 't1',
-    tutorName: 'Dr. Nguyen Van A',
-    topic: 'Algorithm Analysis',
-    mode: 'Zoom',
-    link: 'https://zoom.us/j/123456789',
-    status: 'Scheduled',
-  },
-  {
-    id: 'm11',
-    date: '2024-11-25',
-    time: '13:00',
-    studentId: '2',
-    studentName: 'Le Thi B',
-    tutorId: 't2',
-    tutorName: 'Dr. Tran Thi B',
-    topic: 'Statistics Review',
-    mode: 'In-Person',
-    location: 'Room A3.201',
-    status: 'Scheduled',
-  },
-  {
-    id: 'm12',
-    date: '2024-11-26',
-    time: '10:00',
-    studentId: '3',
-    studentName: 'Tran Van C',
-    tutorId: 't3',
-    tutorName: 'Dr. Le Van C',
-    topic: 'Web Development',
-    mode: 'Teams',
-    link: 'https://teams.microsoft.com/l/meetup-join/...',
-    status: 'Scheduled',
-  },
-  {
-    id: 'm13',
-    date: '2024-11-26',
-    time: '15:00',
-    studentId: '4',
-    studentName: 'Pham Thi D',
-    tutorId: 't1',
-    tutorName: 'Dr. Nguyen Van A',
-    topic: 'System Design',
-    mode: 'Zoom',
-    link: 'https://zoom.us/j/123456789',
-    status: 'Scheduled',
-  },
-  {
-    id: 'm14',
-    date: '2024-11-27',
-    time: '11:00',
-    studentId: '5',
-    studentName: 'Hoang Van E',
-    tutorId: 't2',
-    tutorName: 'Dr. Tran Thi B',
-    topic: 'Mobile Development',
-    mode: 'In-Person',
-    location: 'Room A3.201',
-    status: 'Scheduled',
-  },
-  // Meetings for monthly trend (June 2024)
-  {
-    id: 'm15',
-    date: '2024-06-05',
-    time: '09:00',
-    studentId: '1',
-    studentName: 'Nguyen Van A',
-    tutorId: 't1',
-    tutorName: 'Dr. Nguyen Van A',
-    topic: 'Data Structures',
-    mode: 'Zoom',
-    link: 'https://zoom.us/j/123456789',
-    status: 'Completed',
-  },
-  {
-    id: 'm16',
-    date: '2024-06-12',
-    time: '14:00',
-    studentId: '2',
-    studentName: 'Le Thi B',
-    tutorId: 't2',
-    tutorName: 'Dr. Tran Thi B',
-    topic: 'Algorithms',
-    mode: 'In-Person',
-    location: 'Room A3.201',
-    status: 'Completed',
-  },
-  {
-    id: 'm17',
-    date: '2024-06-20',
-    time: '10:00',
-    studentId: '3',
-    studentName: 'Tran Van C',
-    tutorId: 't3',
-    tutorName: 'Dr. Le Van C',
-    topic: 'Machine Learning',
-    mode: 'Teams',
-    link: 'https://teams.microsoft.com/l/meetup-join/...',
-    status: 'Completed',
-  },
-  // Meetings for May 2024
-  {
-    id: 'm18',
-    date: '2024-05-08',
-    time: '09:00',
-    studentId: '1',
-    studentName: 'Nguyen Van A',
-    tutorId: 't1',
-    tutorName: 'Dr. Nguyen Van A',
-    topic: 'Web Development',
-    mode: 'Zoom',
-    link: 'https://zoom.us/j/123456789',
-    status: 'Completed',
-  },
-  {
-    id: 'm19',
-    date: '2024-05-15',
-    time: '14:00',
-    studentId: '2',
-    studentName: 'Le Thi B',
-    tutorId: 't2',
-    tutorName: 'Dr. Tran Thi B',
-    topic: 'Database Design',
-    mode: 'In-Person',
-    location: 'Room A3.201',
-    status: 'Completed',
-  },
-  {
-    id: 'm20',
-    date: '2024-05-22',
-    time: '10:00',
-    studentId: '3',
-    studentName: 'Tran Van C',
-    tutorId: 't3',
-    tutorName: 'Dr. Le Van C',
-    topic: 'System Design',
-    mode: 'Teams',
-    link: 'https://teams.microsoft.com/l/meetup-join/...',
-    status: 'Completed',
-  },
-  // Meetings for April 2024
-  {
-    id: 'm21',
-    date: '2024-04-10',
-    time: '09:00',
-    studentId: '1',
-    studentName: 'Nguyen Van A',
-    tutorId: 't1',
-    tutorName: 'Dr. Nguyen Van A',
-    topic: 'Mobile Development',
-    mode: 'Zoom',
-    link: 'https://zoom.us/j/123456789',
-    status: 'Completed',
-  },
-  {
-    id: 'm22',
-    date: '2024-04-18',
-    time: '14:00',
-    studentId: '2',
-    studentName: 'Le Thi B',
-    tutorId: 't2',
-    tutorName: 'Dr. Tran Thi B',
-    topic: 'Software Engineering',
-    mode: 'In-Person',
-    location: 'Room A3.201',
-    status: 'Completed',
-  },
-  // Meetings for March 2024
-  {
-    id: 'm23',
-    date: '2024-03-12',
-    time: '09:00',
-    studentId: '1',
-    studentName: 'Nguyen Van A',
-    tutorId: 't1',
-    tutorName: 'Dr. Nguyen Van A',
-    topic: 'Computer Networks',
-    mode: 'Zoom',
-    link: 'https://zoom.us/j/123456789',
-    status: 'Completed',
-  },
-  {
-    id: 'm24',
-    date: '2024-03-20',
-    time: '14:00',
-    studentId: '2',
-    studentName: 'Le Thi B',
-    tutorId: 't2',
-    tutorName: 'Dr. Tran Thi B',
-    topic: 'Operating Systems',
-    mode: 'In-Person',
-    location: 'Room A3.201',
-    status: 'Completed',
-  },
-  {
-    id: 'm25',
-    date: '2024-03-28',
-    time: '10:00',
-    studentId: '3',
-    studentName: 'Tran Van C',
-    tutorId: 't3',
-    tutorName: 'Dr. Le Van C',
-    topic: 'Distributed Systems',
-    mode: 'Teams',
-    link: 'https://teams.microsoft.com/l/meetup-join/...',
-    status: 'Completed',
-  },
-  // Meetings for February 2024
-  {
-    id: 'm26',
-    date: '2024-02-05',
-    time: '09:00',
-    studentId: '1',
-    studentName: 'Nguyen Van A',
-    tutorId: 't1',
-    tutorName: 'Dr. Nguyen Van A',
-    topic: 'Cloud Computing',
-    mode: 'Zoom',
-    link: 'https://zoom.us/j/123456789',
-    status: 'Completed',
-  },
-  {
-    id: 'm27',
-    date: '2024-02-14',
-    time: '14:00',
-    studentId: '2',
-    studentName: 'Le Thi B',
-    tutorId: 't2',
-    tutorName: 'Dr. Tran Thi B',
-    topic: 'Cybersecurity',
-    mode: 'In-Person',
-    location: 'Room A3.201',
-    status: 'Completed',
-  },
-  {
-    id: 'm28',
-    date: '2024-02-22',
-    time: '10:00',
-    studentId: '3',
-    studentName: 'Tran Van C',
-    tutorId: 't3',
-    tutorName: 'Dr. Le Van C',
-    topic: 'AI Fundamentals',
-    mode: 'Teams',
-    link: 'https://teams.microsoft.com/l/meetup-join/...',
-    status: 'Completed',
-  },
-  // Meetings for January 2024
-  {
-    id: 'm29',
-    date: '2024-01-08',
-    time: '09:00',
-    studentId: '1',
-    studentName: 'Nguyen Van A',
-    tutorId: 't1',
-    tutorName: 'Dr. Nguyen Van A',
-    topic: 'Introduction to Programming',
-    mode: 'Zoom',
-    link: 'https://zoom.us/j/123456789',
-    status: 'Completed',
-  },
-  {
-    id: 'm30',
-    date: '2024-01-15',
-    time: '14:00',
-    studentId: '2',
-    studentName: 'Le Thi B',
-    tutorId: 't2',
-    tutorName: 'Dr. Tran Thi B',
-    topic: 'Object-Oriented Programming',
-    mode: 'In-Person',
-    location: 'Room A3.201',
-    status: 'Completed',
-  },
-  {
-    id: 'm31',
-    date: '2024-01-23',
-    time: '10:00',
-    studentId: '3',
-    studentName: 'Tran Van C',
-    tutorId: 't3',
-    tutorName: 'Dr. Le Van C',
-    topic: 'Data Structures Basics',
-    mode: 'Teams',
-    link: 'https://teams.microsoft.com/l/meetup-join/...',
-    status: 'Completed',
-  },
+// Helper to get student name from username
+function getStudentName(username: string): string {
+  // Extract name from username like "sv.nguyenvana" -> "Nguyen Van A"
+  const name = username.replace('sv.', '');
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+// Helper to get tutor name from username
+function getTutorName(username: string): string {
+  if (username.startsWith('tutor.')) {
+    const name = username.replace('tutor.', '');
+    return `Dr. ${name.charAt(0).toUpperCase() + name.slice(1)}`;
+  }
+  return `Dr. ${username.charAt(0).toUpperCase() + username.slice(1)}`;
+}
+
+// Topics for meetings
+const topics = [
+  'Data Structures - Binary Trees',
+  'Algorithms - Sorting',
+  'Database Design',
+  'Web Development',
+  'Machine Learning',
+  'Software Engineering',
+  'Object-Oriented Programming',
+  'System Design',
+  'Python Programming',
+  'Java Programming',
+  'Calculus I',
+  'Linear Algebra',
+  'Statistics',
+  'Computer Networks',
+  'Cybersecurity'
 ];
 
+// Meeting modes
+const modes: Array<'Zoom' | 'Teams' | 'In-Person'> = ['Zoom', 'Teams', 'In-Person'];
+
+// Generate meetings for each student with proper distribution
+export const mockMeetings: Meeting[] = [];
+
+mockStudentAccounts.forEach((student) => {
+  // Each student has 20-50 total meetings
+  const totalMeetings = 20 + Math.floor(Math.random() * 31); // 20-50
+  
+  // 15-35 completed meetings
+  const completedCount = 15 + Math.floor(Math.random() * 21); // 15-35
+  
+  // 2-3 upcoming (scheduled) meetings
+  const upcomingCount = 2 + Math.floor(Math.random() * 2); // 2-3
+  
+  // Remaining are cancelled
+  const cancelledCount = totalMeetings - completedCount - upcomingCount;
+  
+  // Select 3-5 unique tutors for this student
+  const numTutors = 3 + Math.floor(Math.random() * 3); // 3-5
+  const selectedTutors: typeof mockTutorAccounts = [];
+  const tutorIndices = new Set<number>();
+  
+  while (selectedTutors.length < numTutors && tutorIndices.size < mockTutorAccounts.length) {
+    const index = Math.floor(Math.random() * mockTutorAccounts.length);
+    if (!tutorIndices.has(index)) {
+      tutorIndices.add(index);
+      selectedTutors.push(mockTutorAccounts[index]);
+    }
+  }
+  
+  const startDate = new Date('2024-09-01');
+  const today = new Date();
+  
+  // Generate completed meetings (past dates)
+  for (let i = 0; i < completedCount; i++) {
+    const tutor = selectedTutors[Math.floor(Math.random() * selectedTutors.length)];
+    const daysOffset = Math.floor(Math.random() * 90); // Past 90 days
+    const meetingDate = new Date(startDate);
+    meetingDate.setDate(meetingDate.getDate() + daysOffset);
+    
+    // Ensure it's in the past
+    if (meetingDate > today) {
+      meetingDate.setDate(meetingDate.getDate() - 30);
+    }
+    
+    const dateStr = meetingDate.toISOString().split('T')[0];
+    const times = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+    const time = times[Math.floor(Math.random() * times.length)];
+    const topic = topics[Math.floor(Math.random() * topics.length)];
+    const mode = modes[Math.floor(Math.random() * modes.length)];
+    
+    mockMeetings.push({
+      id: `m-${student.userId}-completed-${i + 1}`,
+      date: dateStr,
+      time,
+      studentId: student.userId,
+      studentName: getStudentName(student.username),
+      tutorId: tutor.userId,
+      tutorName: getTutorName(tutor.username),
+      topic,
+      mode,
+      status: 'Completed',
+      link: mode !== 'In-Person' ? `https://meet.google.com/${Math.random().toString(36).substring(7)}` : undefined,
+      location: mode === 'In-Person' ? 'HCMUT Campus - Room A3.201' : undefined,
+      notes: 'Session completed successfully.',
+    });
+  }
+  
+  // Generate upcoming meetings (future dates)
+  for (let i = 0; i < upcomingCount; i++) {
+    const tutor = selectedTutors[Math.floor(Math.random() * selectedTutors.length)];
+    const daysOffset = 1 + Math.floor(Math.random() * 30); // Next 30 days
+    const meetingDate = new Date(today);
+    meetingDate.setDate(meetingDate.getDate() + daysOffset);
+    const dateStr = meetingDate.toISOString().split('T')[0];
+    
+    const times = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+    const time = times[Math.floor(Math.random() * times.length)];
+    const topic = topics[Math.floor(Math.random() * topics.length)];
+    const mode = modes[Math.floor(Math.random() * modes.length)];
+    
+    mockMeetings.push({
+      id: `m-${student.userId}-upcoming-${i + 1}`,
+      date: dateStr,
+      time,
+      studentId: student.userId,
+      studentName: getStudentName(student.username),
+      tutorId: tutor.userId,
+      tutorName: getTutorName(tutor.username),
+      topic,
+      mode,
+      status: 'Scheduled',
+      link: mode !== 'In-Person' ? `https://meet.google.com/${Math.random().toString(36).substring(7)}` : undefined,
+      location: mode === 'In-Person' ? 'HCMUT Campus - Room A3.201' : undefined,
+    });
+  }
+  
+  // Generate cancelled meetings
+  for (let i = 0; i < cancelledCount; i++) {
+    const tutor = selectedTutors[Math.floor(Math.random() * selectedTutors.length)];
+    const daysOffset = Math.floor(Math.random() * 90);
+    const meetingDate = new Date(startDate);
+    meetingDate.setDate(meetingDate.getDate() + daysOffset);
+    
+    // Ensure it's in the past
+    if (meetingDate > today) {
+      meetingDate.setDate(meetingDate.getDate() - 30);
+    }
+    
+    const dateStr = meetingDate.toISOString().split('T')[0];
+    const times = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+    const time = times[Math.floor(Math.random() * times.length)];
+    const topic = topics[Math.floor(Math.random() * topics.length)];
+    const mode = modes[Math.floor(Math.random() * modes.length)];
+    
+    mockMeetings.push({
+      id: `m-${student.userId}-cancelled-${i + 1}`,
+      date: dateStr,
+      time,
+      studentId: student.userId,
+      studentName: getStudentName(student.username),
+      tutorId: tutor.userId,
+      tutorName: getTutorName(tutor.username),
+      topic,
+      mode,
+      status: 'Cancelled',
+      cancelledBy: Math.random() > 0.5 ? 'Student' : 'Tutor',
+      cancellationReason: 'Personal emergency',
+    });
+  }
+});

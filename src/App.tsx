@@ -16,6 +16,7 @@ import { RecordProgressScreen } from './screens/RecordProgressScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { FindTutorScreen } from './screens/FindTutorScreen';
+import { StudentAnalyticsScreen } from './screens/StudentAnalyticsScreen';
 import type { UserEntity } from '@/domain/entities/user';
 import { meetingService } from '@/application/services/meetingService';
 import { useToast } from './components/ui/use-toast';
@@ -126,6 +127,8 @@ function App() {
       'users': 'users',
       'permissions': 'permissions',
       'analytics': 'analytics',
+      'book-meeting': 'find-tutor',
+      'bookmeeting': 'find-tutor',
     };
     
     // Use mapped page or fallback to normalized page
@@ -231,7 +234,15 @@ function App() {
 
     // Handle find tutor screen
     if (currentScreen === 'find-tutor') {
-      return <FindTutorScreen />;
+      return (
+        <FindTutorScreen
+          onViewTutorProfile={(tutorId) => {
+            setCurrentStudentId(tutorId); // Reuse for tutor ID
+            setPreviousScreen(currentScreen);
+            setCurrentScreen('tutorProfile');
+          }}
+        />
+      );
     }
 
 
@@ -293,7 +304,16 @@ function App() {
 
     // Handle dashboard screen
     if (currentScreen === 'dashboard') {
-      return <DashboardScreen />;
+      return <DashboardScreen onNavigate={handleNavigate} />;
+    }
+
+    // Handle analytics screen
+    if (currentScreen === 'analytics') {
+      return (
+        <StudentAnalyticsScreen
+          onBack={() => setCurrentScreen('dashboard')}
+        />
+      );
     }
 
     // Default screen content

@@ -37,7 +37,7 @@ function generateAvailability(): Array<{ date: string; time: string }> {
 }
 
 // Generate tutor profiles from tutor accounts
-export const mockTutors: TutorProfile[] = mockTutorAccounts.map((tutor, index) => {
+export const mockTutors: TutorProfile[] = mockTutorAccounts.map((tutor) => {
   const name = `Dr. ${tutor.username.charAt(0).toUpperCase() + tutor.username.slice(1)}`;
   const departments = ['Computer Science', 'Software Engineering', 'Information Systems', 'Mathematics', 'Data Science'];
   const specializations = ['Computer Science', 'Software Engineering', 'Information Systems', 'Mathematics', 'Data Science', 'Cybersecurity'];

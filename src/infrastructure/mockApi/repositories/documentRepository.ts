@@ -26,6 +26,14 @@ class MockDocumentRepository {
     mockDocuments[index] = { ...mockDocuments[index], ...update };
     return mockDocuments[index];
   }
+
+  async delete(documentId: string): Promise<boolean> {
+    await simulateNetworkLatency();
+    const index = mockDocuments.findIndex((doc) => doc.id === documentId);
+    if (index === -1) return false;
+    mockDocuments.splice(index, 1);
+    return true;
+  }
 }
 
 export const mockDocumentRepository = new MockDocumentRepository();

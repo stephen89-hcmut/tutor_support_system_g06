@@ -34,7 +34,7 @@ export function AITutorSuggestionScreen({ onBack, filters }: AITutorSuggestionSc
   const { userId } = useRole();
   const [isLoading, setIsLoading] = useState(true);
   const [suggestions, setSuggestions] = useState<SuggestionView[]>([]);
-  const [remainingSuggestions, setRemainingSuggestions] = useState<SuggestionView[]>([]);
+  const [, setRemainingSuggestionsQueue] = useState<SuggestionView[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingTutor, setBookingTutor] = useState<TutorProfile | null>(null);
@@ -75,7 +75,7 @@ export function AITutorSuggestionScreen({ onBack, filters }: AITutorSuggestionSc
         );
         if (!cancelled) {
           setSuggestions(enriched.slice(0, 5));
-          setRemainingSuggestions(enriched.slice(5));
+          setRemainingSuggestionsQueue(enriched.slice(5));
           setIsLoading(false);
         }
       })
@@ -120,7 +120,6 @@ export function AITutorSuggestionScreen({ onBack, filters }: AITutorSuggestionSc
       await tutorSuggestionService.acceptSuggestion(bookingSuggestionId);
       removeSuggestionAndFill(bookingSuggestionId);
       toast({
-        variant: 'success',
         title: 'Đặt lịch thành công',
         description: tutorName ? `Bạn đã đặt lịch với ${tutorName}.` : 'Đặt lịch thành công.',
       });
@@ -138,7 +137,7 @@ export function AITutorSuggestionScreen({ onBack, filters }: AITutorSuggestionSc
 
   const removeSuggestionAndFill = (suggestionId: string) => {
     let replacement: SuggestionView | null = null;
-    setRemainingSuggestions((prevQueue) => {
+    setRemainingSuggestionsQueue((prevQueue) => {
       if (prevQueue.length === 0) return prevQueue;
       const [next, ...rest] = prevQueue;
       replacement = next;

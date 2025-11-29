@@ -1,7 +1,91 @@
 import type { ProgressRecord } from '@/domain/entities/progress';
+import { mockStudentAccounts } from './mockUsers';
+import { mockTutorAccounts } from './mockUsers';
 
-// Generate progress records for students
-// Distribution: ~175 good (progress 75-95), ~175 average (progress 50-74), ~175 weak (progress 20-49)
+// Helper to get tutor name
+function getTutorName(username: string): string {
+  if (username.startsWith('tutor.')) {
+    const name = username.replace('tutor.', '');
+    return `Dr. ${name.charAt(0).toUpperCase() + name.slice(1)}`;
+  }
+  return `Dr. ${username.charAt(0).toUpperCase() + username.slice(1)}`;
+}
+
+// Topics by subject area
+const topicsBySubject: Record<string, string[]> = {
+  'Data Structures': [
+    'Arrays and Linked Lists',
+    'Stacks and Queues',
+    'Binary Trees',
+    'Hash Tables',
+    'Graphs - BFS and DFS',
+    'Heaps and Priority Queues'
+  ],
+  'Algorithms': [
+    'Sorting Algorithms',
+    'Search Algorithms',
+    'Dynamic Programming',
+    'Greedy Algorithms',
+    'Graph Algorithms',
+    'Recursion and Backtracking'
+  ],
+  'Database Systems': [
+    'SQL Queries',
+    'Database Design',
+    'Normalization',
+    'Indexing',
+    'Transactions',
+    'NoSQL Databases'
+  ],
+  'Web Development': [
+    'HTML/CSS Basics',
+    'JavaScript Fundamentals',
+    'React Components',
+    'Node.js Backend',
+    'RESTful APIs',
+    'State Management'
+  ],
+  'Software Engineering': [
+    'Design Patterns',
+    'Object-Oriented Design',
+    'Software Testing',
+    'Version Control',
+    'Agile Methodology',
+    'Code Review'
+  ],
+  'Machine Learning': [
+    'Linear Regression',
+    'Classification',
+    'Neural Networks',
+    'Deep Learning',
+    'Data Preprocessing',
+    'Model Evaluation'
+  ],
+  'Mathematics': [
+    'Calculus',
+    'Linear Algebra',
+    'Discrete Mathematics',
+    'Probability',
+    'Statistics',
+    'Differential Equations'
+  ],
+  'Python Programming': [
+    'Python Basics',
+    'Data Structures in Python',
+    'Object-Oriented Python',
+    'File Handling',
+    'Libraries and Modules',
+    'Error Handling'
+  ],
+  'Java Programming': [
+    'Java Basics',
+    'Classes and Objects',
+    'Inheritance and Polymorphism',
+    'Collections Framework',
+    'Exception Handling',
+    'Multithreading'
+  ]
+};
 
 function generateProgressRecord(
   recordId: string,
@@ -82,108 +166,48 @@ function generateProgressRecord(
   };
 }
 
-// Topics by subject area
-const topicsBySubject: Record<string, string[]> = {
-  'Data Structures': [
-    'Arrays and Linked Lists',
-    'Stacks and Queues',
-    'Binary Trees',
-    'Hash Tables',
-    'Graphs - BFS and DFS',
-    'Heaps and Priority Queues'
-  ],
-  'Algorithms': [
-    'Sorting Algorithms',
-    'Search Algorithms',
-    'Dynamic Programming',
-    'Greedy Algorithms',
-    'Graph Algorithms',
-    'Recursion and Backtracking'
-  ],
-  'Database Systems': [
-    'SQL Queries',
-    'Database Design',
-    'Normalization',
-    'Indexing',
-    'Transactions',
-    'NoSQL Databases'
-  ],
-  'Web Development': [
-    'HTML/CSS Basics',
-    'JavaScript Fundamentals',
-    'React Components',
-    'Node.js Backend',
-    'RESTful APIs',
-    'State Management'
-  ],
-  'Software Engineering': [
-    'Design Patterns',
-    'Object-Oriented Design',
-    'Software Testing',
-    'Version Control',
-    'Agile Methodology',
-    'Code Review'
-  ],
-  'Machine Learning': [
-    'Linear Regression',
-    'Classification',
-    'Neural Networks',
-    'Deep Learning',
-    'Data Preprocessing',
-    'Model Evaluation'
-  ],
-  'Mathematics': [
-    'Calculus',
-    'Linear Algebra',
-    'Discrete Mathematics',
-    'Probability',
-    'Statistics',
-    'Differential Equations'
-  ],
-  'Python Programming': [
-    'Python Basics',
-    'Data Structures in Python',
-    'Object-Oriented Python',
-    'File Handling',
-    'Libraries and Modules',
-    'Error Handling'
-  ],
-  'Java Programming': [
-    'Java Basics',
-    'Classes and Objects',
-    'Inheritance and Polymorphism',
-    'Collections Framework',
-    'Exception Handling',
-    'Multithreading'
-  ]
-};
-
 // Generate progress records for all students
 export const mockProgressRecords: ProgressRecord[] = [];
 
-// Generate 2-5 progress records per student
-for (let studentIndex = 1; studentIndex <= 525; studentIndex++) {
-  const studentId = `s${studentIndex}`;
+// Generate progress records for each student (matching their meeting count)
+mockStudentAccounts.forEach((student, studentIndex) => {
+  const studentId = student.userId;
   
   // Determine performance level: ~175 good, ~175 average, ~175 weak
   let performanceLevel: 'good' | 'average' | 'weak';
-  if (studentIndex <= 175) {
+  if (studentIndex < 175) {
     performanceLevel = 'good';
-  } else if (studentIndex <= 350) {
+  } else if (studentIndex < 350) {
     performanceLevel = 'average';
   } else {
     performanceLevel = 'weak';
   }
   
-  // Generate 2-5 sessions per student
-  const numSessions = 2 + Math.floor(Math.random() * 4);
-  const startDate = new Date('2024-09-01');
+  // Each student has 15-35 completed meetings, so generate progress for those
+  // Progress records should match completed meetings (not all meetings have progress)
+  const numProgressRecords = 15 + Math.floor(Math.random() * 21); // 15-35
   
-  for (let sessionNum = 1; sessionNum <= numSessions; sessionNum++) {
-    // Random tutor
-    const tutorIndex = 1 + Math.floor(Math.random() * 70);
-    const tutorId = `t${tutorIndex}`;
-    const tutorName = `Tutor ${tutorIndex}`;
+  // Select 3-5 unique tutors for this student (same as meetings)
+  const numTutors = 3 + Math.floor(Math.random() * 3); // 3-5
+  const selectedTutors: typeof mockTutorAccounts = [];
+  const tutorIndices = new Set<number>();
+  
+  while (selectedTutors.length < numTutors && tutorIndices.size < mockTutorAccounts.length) {
+    const index = Math.floor(Math.random() * mockTutorAccounts.length);
+    if (!tutorIndices.has(index)) {
+      tutorIndices.add(index);
+      selectedTutors.push(mockTutorAccounts[index]);
+    }
+  }
+  
+  const startDate = new Date('2024-09-01');
+  const today = new Date();
+  
+  for (let sessionNum = 1; sessionNum <= numProgressRecords; sessionNum++) {
+    // Random tutor from selected tutors
+    const tutor = selectedTutors[Math.floor(Math.random() * selectedTutors.length)];
+    const tutorId = tutor.userId;
+    const tutorName = getTutorName(tutor.username);
     
     // Random subject and topic
     const subjects = Object.keys(topicsBySubject);
@@ -191,10 +215,16 @@ for (let studentIndex = 1; studentIndex <= 525; studentIndex++) {
     const topics = topicsBySubject[subject];
     const topic = topics[Math.floor(Math.random() * topics.length)];
     
-    // Generate date (spread over 3 months)
+    // Generate date (spread over past 90 days, all in the past)
     const daysOffset = Math.floor(Math.random() * 90);
     const sessionDate = new Date(startDate);
     sessionDate.setDate(sessionDate.getDate() + daysOffset);
+    
+    // Ensure it's in the past
+    if (sessionDate > today) {
+      sessionDate.setDate(sessionDate.getDate() - 30);
+    }
+    
     const dateStr = sessionDate.toISOString().split('T')[0];
     
     const recordId = `pr-${studentId}-${sessionNum}`;
@@ -213,7 +243,7 @@ for (let studentIndex = 1; studentIndex <= 525; studentIndex++) {
       )
     );
   }
-}
+});
 
 export const mockSessionHistory = mockProgressRecords.map((record) => ({
   sessionId: record.sessionId,

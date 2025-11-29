@@ -1,6 +1,7 @@
+import { memo } from 'react';
 import { HelpCircle, Youtube, Linkedin } from 'lucide-react';
 
-export function Footer() {
+export const Footer = memo(function Footer() {
   return (
     <footer className="bg-[#0A84D6] text-white mt-auto">
       <div className="container mx-auto px-4 py-6">
@@ -54,5 +55,5 @@ export function Footer() {
       </button>
     </footer>
   );
-}
+});
 

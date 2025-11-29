@@ -14,8 +14,13 @@ import { Search, Sparkles, Grid, List } from 'lucide-react';
 import type { TutorProfile } from '@/domain/entities/tutor';
 import { tutorService } from '@/application/services/tutorService';
 import { AITutorSuggestionScreen } from './AITutorSuggestionScreen';
+import { BookMeetingModal } from '@/components/BookMeetingModal';
 
-export function FindTutorScreen() {
+interface FindTutorScreenProps {
+  onViewTutorProfile?: (tutorId: string) => void;
+}
+
+export function FindTutorScreen({ onViewTutorProfile }: FindTutorScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [department, setDepartment] = useState<string>('all');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
@@ -28,6 +33,8 @@ export function FindTutorScreen() {
   const [tutors, setTutors] = useState<TutorProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTutor, setSelectedTutor] = useState<TutorProfile | null>(null);
+  const [showBookModal, setShowBookModal] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -365,9 +372,30 @@ export function FindTutorScreen() {
       ) : (
         <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'}>
           {filteredTutors.map((tutor) => (
-            <TutorCard key={tutor.id} tutor={tutor} />
+            <TutorCard
+              key={tutor.id}
+              tutor={tutor}
+              onBook={() => {
+                setSelectedTutor(tutor);
+                setShowBookModal(true);
+              }}
+              onViewProfile={() => onViewTutorProfile?.(tutor.id)}
+            />
           ))}
         </div>
+      )}
+
+      {/* Book Meeting Modal */}
+      {selectedTutor && (
+        <BookMeetingModal
+          tutor={selectedTutor}
+          open={showBookModal}
+          onOpenChange={setShowBookModal}
+          onBookComplete={() => {
+            setShowBookModal(false);
+            setSelectedTutor(null);
+          }}
+        />
       )}
     </div>
   );
@@ -375,9 +403,11 @@ export function FindTutorScreen() {
 
 interface TutorCardProps {
   tutor: TutorProfile;
+  onBook: () => void;
+  onViewProfile: () => void;
 }
 
-function TutorCard({ tutor }: TutorCardProps) {
+function TutorCard({ tutor, onBook, onViewProfile }: TutorCardProps) {
   return (
     <Card>
       <CardContent className="p-6">
@@ -408,10 +438,10 @@ function TutorCard({ tutor }: TutorCardProps) {
             </div>
             <p className="text-sm text-muted-foreground mb-4">{tutor.bio}</p>
             <div className="flex gap-2">
-              <Button size="sm" className="flex-1">
+              <Button size="sm" className="flex-1" onClick={onBook}>
                 Book
               </Button>
-              <Button variant="outline" size="sm" className="flex-1">
+              <Button variant="outline" size="sm" className="flex-1" onClick={onViewProfile}>
                 View Profile
               </Button>
             </div>

@@ -1,131 +1,204 @@
 import type { Document } from '@/domain/entities/document';
+import { mockStudentAccounts, mockTutorAccounts, mockManagerAccounts } from './mockUsers';
 
-export const mockDocuments: Document[] = [
-  {
-    id: 'doc1',
-    title: 'Data Structures and Algorithms - Lecture 1',
-    description: 'Introduction to data structures, arrays, linked lists, and basic algorithms. Covers Big O notation and complexity analysis.',
-    type: 'Lecture Notes',
-    format: 'PDF',
-    size: '2.4 MB',
-    downloads: 145,
-    accessLevel: 'public',
-    uploadedBy: 't1',
-    uploadedByName: 'Dr. Nguyen Van A',
-    uploadDate: '2024-11-01',
-    category: 'Computer Science',
-  },
-  {
-    id: 'doc2',
-    title: 'Calculus I - Assignment 3',
-    description: 'Problem set covering derivatives, integrals, and limits. Due date: Nov 15, 2025.',
-    type: 'Assignment',
-    format: 'PDF',
-    size: '856 KB',
-    downloads: 89,
-    accessLevel: 'public',
-    uploadedBy: 't2',
-    uploadedByName: 'Prof. Pham Hoa',
-    uploadDate: '2024-11-05',
-    category: 'Mathematics',
-  },
-  {
-    id: 'doc3',
-    title: 'Machine Learning Study Guide',
-    description: 'Comprehensive study guide for ML course covering supervised learning, neural networks, and deep learning fundamentals.',
-    type: 'Study Material',
-    format: 'DOCX',
-    size: '5.2 MB',
-    downloads: 234,
-    accessLevel: 'restricted',
-    uploadedBy: 't3',
-    uploadedByName: 'Dr. Nguyen Lan',
-    uploadDate: '2024-10-28',
-    category: 'Computer Science',
-  },
-  {
-    id: 'doc4',
-    title: 'Software Engineering Research Paper',
-    description: 'Research on agile methodologies and their impact on software development lifecycle.',
-    type: 'Research Paper',
-    format: 'PDF',
-    size: '3.8 MB',
-    downloads: 67,
-    accessLevel: 'public',
-    uploadedBy: 'm1',
-    uploadedByName: 'Manager Admin',
-    uploadDate: '2024-10-25',
-    category: 'Research',
-  },
-  {
-    id: 'doc5',
-    title: 'Physics II Lab Manual',
-    description: 'Complete lab manual for Physics II course including all experiments and safety guidelines.',
-    type: 'Lab Manual',
-    format: 'PDF',
-    size: '8.7 MB',
-    downloads: 178,
-    accessLevel: 'public',
-    uploadedBy: 't2',
-    uploadedByName: 'Prof. Pham Hoa',
-    uploadDate: '2024-10-20',
-    category: 'Physics',
-  },
-  {
-    id: 'doc6',
-    title: 'Database Design - Final Project',
-    description: 'Sample final project demonstrating database normalization, SQL queries, and ER diagrams.',
-    type: 'Project Report',
-    format: 'ZIP',
-    size: '12.3 MB',
-    downloads: 112,
-    accessLevel: 'restricted',
-    uploadedBy: 't1',
-    uploadedByName: 'Dr. Nguyen Van A',
-    uploadDate: '2024-10-15',
-    category: 'Computer Science',
-  },
-  {
-    id: 'doc7',
-    title: 'Web Development Course Syllabus',
-    description: 'Complete syllabus for Web Development course covering HTML, CSS, JavaScript, React, and Node.js.',
-    type: 'Syllabus',
-    format: 'PDF',
-    size: '1.2 MB',
-    downloads: 298,
-    accessLevel: 'public',
-    uploadedBy: 'm1',
-    uploadedByName: 'Manager Admin',
-    uploadDate: '2024-10-10',
-    category: 'Computer Science',
-  },
-  {
-    id: 'doc8',
-    title: 'Advanced Algorithms - Private Notes',
-    description: 'Private notes for advanced algorithm concepts. Access restricted to managers only.',
-    type: 'Lecture Notes',
-    format: 'PDF',
-    size: '4.5 MB',
-    downloads: 5,
-    accessLevel: 'private',
-    uploadedBy: 'm1',
-    uploadedByName: 'Manager Admin',
-    uploadDate: '2024-11-10',
-    category: 'Computer Science',
-  },
-  {
-    id: 'doc9',
-    title: 'System Architecture - Internal Document',
-    description: 'Internal system architecture documentation. Manager access only.',
-    type: 'Research Paper',
-    format: 'PDF',
-    size: '6.1 MB',
-    downloads: 3,
-    accessLevel: 'private',
-    uploadedBy: 'm1',
-    uploadedByName: 'Manager Admin',
-    uploadDate: '2024-11-08',
-    category: 'Research',
-  },
+// Helper to get name from username
+function getName(username: string, role: 'Student' | 'Tutor' | 'Manager'): string {
+  if (role === 'Student') {
+    const name = username.replace('sv.', '');
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  } else if (role === 'Tutor') {
+    if (username.startsWith('tutor.')) {
+      const name = username.replace('tutor.', '');
+      return `Dr. ${name.charAt(0).toUpperCase() + name.slice(1)}`;
+    }
+    return `Dr. ${username.charAt(0).toUpperCase() + username.slice(1)}`;
+  } else {
+    if (username.startsWith('manager.')) {
+      const name = username.replace('manager.', '');
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    }
+    return username.charAt(0).toUpperCase() + username.slice(1);
+  }
+}
+
+// Document templates
+const documentTemplates = [
+  { type: 'Lecture Notes', categories: ['Computer Science', 'Mathematics', 'Physics'] },
+  { type: 'Assignment', categories: ['Computer Science', 'Mathematics', 'Physics'] },
+  { type: 'Study Material', categories: ['Computer Science', 'Mathematics', 'Physics', 'Research'] },
+  { type: 'Research Paper', categories: ['Research', 'Computer Science'] },
+  { type: 'Lab Manual', categories: ['Physics', 'Computer Science'] },
+  { type: 'Project Report', categories: ['Computer Science', 'Research'] },
+  { type: 'Syllabus', categories: ['Computer Science', 'Mathematics', 'Physics'] },
 ];
 
+const titles = [
+  'Data Structures and Algorithms',
+  'Introduction to Programming',
+  'Database Systems',
+  'Web Development Fundamentals',
+  'Machine Learning Basics',
+  'Software Engineering Principles',
+  'Object-Oriented Design',
+  'System Design Patterns',
+  'Python Programming',
+  'Java Programming',
+  'C++ Programming',
+  'JavaScript Essentials',
+  'React Development',
+  'Node.js Backend',
+  'Mobile App Development',
+  'Computer Networks',
+  'Cybersecurity Fundamentals',
+  'Artificial Intelligence',
+  'Deep Learning',
+  'Data Science',
+  'Calculus I',
+  'Linear Algebra',
+  'Discrete Mathematics',
+  'Probability and Statistics',
+  'Operating Systems',
+  'Compiler Design',
+  'Computer Graphics',
+  'Distributed Systems',
+  'Cloud Computing',
+  'Big Data Analytics',
+];
+
+const descriptions = [
+  'Comprehensive guide covering all fundamental concepts and practical examples.',
+  'Step-by-step tutorial with exercises and solutions.',
+  'Detailed notes from lectures with additional explanations.',
+  'Complete reference material for exam preparation.',
+  'Hands-on lab exercises with detailed instructions.',
+  'Research findings and analysis on current topics.',
+  'Project documentation with code examples and diagrams.',
+  'Course syllabus with learning objectives and schedule.',
+];
+
+// Generate 100 documents
+export const mockDocuments: Document[] = [];
+
+// Generate documents from tutors (60 documents)
+mockTutorAccounts.slice(0, 30).forEach((tutor, tutorIndex) => {
+  const numDocs = 2; // 2 docs per tutor = 60 docs
+  for (let i = 0; i < numDocs; i++) {
+    const template = documentTemplates[Math.floor(Math.random() * documentTemplates.length)];
+    const category = template.categories[Math.floor(Math.random() * template.categories.length)];
+    const title = titles[Math.floor(Math.random() * titles.length)];
+    const description = descriptions[Math.floor(Math.random() * descriptions.length)];
+    
+    const formats: Array<'PDF' | 'DOCX' | 'ZIP' | 'PPTX' | 'XLSX'> = ['PDF', 'DOCX', 'ZIP', 'PPTX', 'XLSX'];
+    const format = formats[Math.floor(Math.random() * formats.length)];
+    
+    const sizes = ['1.2 MB', '2.4 MB', '3.8 MB', '5.2 MB', '8.7 MB', '12.3 MB'];
+    const size = sizes[Math.floor(Math.random() * sizes.length)];
+    
+    // More public documents for better visibility
+    // 60% public, 30% restricted, 10% private
+    const rand = Math.random();
+    const accessLevel: 'public' | 'restricted' | 'private' = rand < 0.6 ? 'public' : rand < 0.9 ? 'restricted' : 'private';
+    
+    const uploadDate = new Date();
+    uploadDate.setDate(uploadDate.getDate() - Math.floor(Math.random() * 90));
+    
+    mockDocuments.push({
+      id: `doc-t${tutorIndex}-${i + 1}`,
+      title: `${title} - ${template.type}`,
+      description,
+      type: template.type as any,
+      format,
+      size,
+      downloads: Math.floor(Math.random() * 300),
+      accessLevel,
+      uploadedBy: tutor.userId,
+      uploadedByName: getName(tutor.username, 'Tutor'),
+      uploadDate: uploadDate.toISOString().split('T')[0],
+      category,
+      fileUrl: `https://example.com/files/${title.toLowerCase().replace(/\s+/g, '-')}.${format.toLowerCase()}`,
+    });
+  }
+});
+
+// Generate documents from students (30 documents)
+mockStudentAccounts.slice(0, 15).forEach((student, studentIndex) => {
+  const numDocs = 2; // 2 docs per student = 30 docs
+  for (let i = 0; i < numDocs; i++) {
+    const template = documentTemplates[Math.floor(Math.random() * documentTemplates.length)];
+    const category = template.categories[Math.floor(Math.random() * template.categories.length)];
+    const title = titles[Math.floor(Math.random() * titles.length)];
+    const description = descriptions[Math.floor(Math.random() * descriptions.length)];
+    
+    const formats: Array<'PDF' | 'DOCX' | 'ZIP' | 'PPTX' | 'XLSX'> = ['PDF', 'DOCX', 'ZIP'];
+    const format = formats[Math.floor(Math.random() * formats.length)];
+    
+    const sizes = ['1.2 MB', '2.4 MB', '3.8 MB', '5.2 MB'];
+    const size = sizes[Math.floor(Math.random() * sizes.length)];
+    
+    // Students typically upload public documents
+    const accessLevel: 'public' | 'restricted' | 'private' = Math.random() > 0.3 ? 'public' : 'restricted';
+    
+    const uploadDate = new Date();
+    uploadDate.setDate(uploadDate.getDate() - Math.floor(Math.random() * 60));
+    
+    mockDocuments.push({
+      id: `doc-s${studentIndex}-${i + 1}`,
+      title: `${title} - ${template.type}`,
+      description,
+      type: template.type as any,
+      format,
+      size,
+      downloads: Math.floor(Math.random() * 150),
+      accessLevel,
+      uploadedBy: student.userId,
+      uploadedByName: getName(student.username, 'Student'),
+      uploadDate: uploadDate.toISOString().split('T')[0],
+      category,
+      fileUrl: `https://example.com/files/${title.toLowerCase().replace(/\s+/g, '-')}.${format.toLowerCase()}`,
+    });
+  }
+});
+
+// Generate documents from managers (10 documents)
+mockManagerAccounts.forEach((manager, managerIndex) => {
+  const numDocs = 2; // 2 docs per manager = 10 docs
+  for (let i = 0; i < numDocs; i++) {
+    const template = documentTemplates[Math.floor(Math.random() * documentTemplates.length)];
+    const category = template.categories[Math.floor(Math.random() * template.categories.length)];
+    const title = titles[Math.floor(Math.random() * titles.length)];
+    const description = descriptions[Math.floor(Math.random() * descriptions.length)];
+    
+    const formats: Array<'PDF' | 'DOCX' | 'ZIP' | 'PPTX' | 'XLSX'> = ['PDF', 'DOCX', 'PPTX'];
+    const format = formats[Math.floor(Math.random() * formats.length)];
+    
+    const sizes = ['2.4 MB', '3.8 MB', '5.2 MB', '8.7 MB'];
+    const size = sizes[Math.floor(Math.random() * sizes.length)];
+    
+    // Managers can have all access levels
+    // More public documents for better visibility
+    // 60% public, 30% restricted, 10% private
+    const rand = Math.random();
+    const accessLevel: 'public' | 'restricted' | 'private' = rand < 0.6 ? 'public' : rand < 0.9 ? 'restricted' : 'private';
+    
+    const uploadDate = new Date();
+    uploadDate.setDate(uploadDate.getDate() - Math.floor(Math.random() * 120));
+    
+    mockDocuments.push({
+      id: `doc-m${managerIndex}-${i + 1}`,
+      title: `${title} - ${template.type}`,
+      description,
+      type: template.type as any,
+      format,
+      size,
+      downloads: Math.floor(Math.random() * 200),
+      accessLevel,
+      uploadedBy: manager.userId,
+      uploadedByName: getName(manager.username, 'Manager'),
+      uploadDate: uploadDate.toISOString().split('T')[0],
+      category,
+      fileUrl: `https://example.com/files/${title.toLowerCase().replace(/\s+/g, '-')}.${format.toLowerCase()}`,
+    });
+  }
+});
+
+// Total: 60 + 30 + 10 = 100 documents

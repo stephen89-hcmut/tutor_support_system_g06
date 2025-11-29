@@ -25,8 +25,14 @@ import {
 import type { Meeting } from '@/domain/entities/meeting';
 import { meetingService } from '@/application/services/meetingService';
 import { format, startOfWeek, eachDayOfInterval, subMonths, startOfMonth } from 'date-fns';
+import { useRole } from '@/contexts/RoleContext';
 
-export function DashboardScreen() {
+interface DashboardScreenProps {
+  onNavigate?: (screen: string) => void;
+}
+
+export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
+  const { role, userId } = useRole();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +43,15 @@ export function DashboardScreen() {
       setLoading(true);
       setError(null);
       try {
-        const data = await meetingService.getAll();
+        // Load meetings based on role
+        let data: Meeting[];
+        if (role === 'Student' && userId) {
+          data = await meetingService.getByStudent(userId);
+        } else if (role === 'Tutor' && userId) {
+          data = await meetingService.getByTutor(userId);
+        } else {
+          data = await meetingService.getAll();
+        }
         if (!mounted) return;
         setMeetings(data);
       } catch (err) {
@@ -54,7 +68,7 @@ export function DashboardScreen() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [role, userId]);
 
   // Calculate summary statistics
   const stats = useMemo(() => {
@@ -213,31 +227,36 @@ export function DashboardScreen() {
       </div>
 
       {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button className="bg-primary hover:bg-primary-dark text-white">
-              <Calendar className="mr-2 h-4 w-4" />
-              Book New Meeting
-            </Button>
-            <Button variant="outline">
-              <Calendar className="mr-2 h-4 w-4" />
-              View All Meetings
-            </Button>
-            <Button variant="outline">
-              <TrendingUp className="mr-2 h-4 w-4" />
-              My Progress
-            </Button>
-            <Button variant="outline">
-              <BarChart3 className="mr-2 h-4 w-4" />
-              View Analytics
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {role === 'Student' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Button
+                className="bg-primary hover:bg-primary-dark text-white"
+                onClick={() => onNavigate?.('find-tutor')}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                Book New Meeting
+              </Button>
+              <Button variant="outline" onClick={() => onNavigate?.('meetings')}>
+                <Calendar className="mr-2 h-4 w-4" />
+                View All Meetings
+              </Button>
+              <Button variant="outline" onClick={() => onNavigate?.('my-progress')}>
+                <TrendingUp className="mr-2 h-4 w-4" />
+                My Progress
+              </Button>
+              <Button variant="outline" onClick={() => onNavigate?.('analytics')}>
+                <BarChart3 className="mr-2 h-4 w-4" />
+                View Analytics
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

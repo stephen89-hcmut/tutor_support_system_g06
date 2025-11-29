@@ -98,6 +98,40 @@ class MaterialService {
     await mockDocumentRepository.update(materialId, { topicIds: Array.from(topicIds) });
     return true;
   }
+
+  async deleteMaterial(materialId: string, userId: string): Promise<boolean> {
+    const material = await mockDocumentRepository.findById(materialId);
+    if (!material) return false;
+    // Check if user is the owner or manager
+    if (material.uploadedBy !== userId) {
+      // In real app, check if user is manager
+      return false;
+    }
+    return mockDocumentRepository.delete(materialId);
+  }
+
+  async updateMaterial(materialId: string, updates: Partial<Document>, userId: string): Promise<Document | undefined> {
+    const material = await mockDocumentRepository.findById(materialId);
+    if (!material) return undefined;
+    // Check if user is the owner or manager
+    if (material.uploadedBy !== userId) {
+      // In real app, check if user is manager
+      return undefined;
+    }
+    return mockDocumentRepository.update(materialId, updates);
+  }
+
+  async updateAccessLevel(materialId: string, accessLevel: 'public' | 'restricted' | 'private', userId: string): Promise<boolean> {
+    const material = await mockDocumentRepository.findById(materialId);
+    if (!material) return false;
+    // Check if user is the owner or manager
+    if (material.uploadedBy !== userId) {
+      // In real app, check if user is manager
+      return false;
+    }
+    await mockDocumentRepository.update(materialId, { accessLevel });
+    return true;
+  }
 }
 
 export const materialService = new MaterialService();

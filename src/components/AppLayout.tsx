@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { useRole } from '@/contexts/RoleContext';
 import { 
   LayoutDashboard, 
   Video, 
-  Search, 
   TrendingUp, 
   BookOpen, 
   Settings,
@@ -60,7 +59,7 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
   ],
 };
 
-export function AppLayout({ currentScreen, onNavigate, onLogout, children }: AppLayoutProps) {
+export const AppLayout = memo(function AppLayout({ currentScreen, onNavigate, onLogout, children }: AppLayoutProps) {
   const { role, userId, userName } = useRole();
   const menuItems = role ? menuItemsByRole[role] || [] : [];
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -68,12 +67,15 @@ export function AppLayout({ currentScreen, onNavigate, onLogout, children }: App
   useEffect(() => {
     let mounted = true;
     const loadProfile = async () => {
-      if (!role) {
+      if (!role || !userId) {
         setUserProfile(null);
         return;
       }
       try {
-        const profile = await profileService.getProfileByRole(role);
+        // Try to get profile by userId first, fallback to role
+        const profile = userId 
+          ? (await profileService.getProfileByUserId(userId)) || await profileService.getProfileByRole(role)
+          : await profileService.getProfileByRole(role);
         if (!mounted) return;
         setUserProfile(profile);
       } catch (err) {
@@ -86,7 +88,7 @@ export function AppLayout({ currentScreen, onNavigate, onLogout, children }: App
     return () => {
       mounted = false;
     };
-  }, [role]);
+  }, [role, userId]);
 
   const getRoleColor = () => {
     switch (role) {
@@ -198,5 +200,5 @@ export function AppLayout({ currentScreen, onNavigate, onLogout, children }: App
       </main>
     </div>
   );
-}
+});
 

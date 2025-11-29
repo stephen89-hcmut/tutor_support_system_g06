@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRole } from '@/contexts/RoleContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, Search, Grid, List, Download, Share2, MoreVertical, Lock, Globe, Shield } from 'lucide-react';
+import { Pagination } from '@/components/ui/pagination';
 import type { Document, AccessLevel, DocumentType, FileFormat } from '@/domain/entities/document';
 import { MaterialVisibility } from '@/domain/enums';
 import type { MaterialFilterDto, MaterialMetadataDto } from '@/domain/dtos';
@@ -47,27 +48,39 @@ export function DocumentLibraryScreen() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const { toast } = useToast();
 
   const currentUserId = userId ?? 'demo-user';
 
-  const refreshMaterials = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const filter: MaterialFilterDto = {};
-      const data = await materialService.searchMaterials(searchQuery, filter);
-      setDocuments(data);
-    } catch (err) {
-      setError('Không thể tải thư viện tài liệu.');
-    } finally {
-      setLoading(false);
-    }
-  }, [searchQuery]);
-
+  // Load all documents once on mount
   useEffect(() => {
-    refreshMaterials();
-  }, [refreshMaterials]);
+    let mounted = true;
+    const loadDocuments = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const filter: MaterialFilterDto = {};
+        const data = await materialService.searchMaterials('', filter);
+        if (mounted) {
+          setDocuments(data);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError('Không thể tải thư viện tài liệu.');
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+    loadDocuments();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Filter documents based on role and access level
   const filteredDocuments = useMemo(() => {
@@ -75,9 +88,15 @@ export function DocumentLibraryScreen() {
 
     // Role-based access filtering
     if (role === 'Student') {
-      docs = docs.filter(doc => doc.accessLevel === 'public');
+      // Students can see public documents and their own documents
+      docs = docs.filter(doc => doc.accessLevel === 'public' || doc.uploadedBy === currentUserId);
     } else if (role === 'Tutor') {
-      docs = docs.filter(doc => doc.accessLevel === 'public' || doc.accessLevel === 'restricted');
+      // Tutors can see public, restricted, and their own documents
+      docs = docs.filter(doc => 
+        doc.accessLevel === 'public' || 
+        doc.accessLevel === 'restricted' || 
+        doc.uploadedBy === currentUserId
+      );
     }
     // Manager can see all (public, restricted, private)
 
@@ -114,6 +133,18 @@ export function DocumentLibraryScreen() {
     return docs;
   }, [searchQuery, categoryFilter, accessLevelFilter, sortBy, role, documents]);
 
+  // Pagination
+  const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage);
+  const paginatedDocuments = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredDocuments.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredDocuments, currentPage, itemsPerPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, categoryFilter, accessLevelFilter, sortBy]);
+
   const categories = useMemo(() => {
     const cats = new Set<string>();
     documents.forEach((doc) => {
@@ -128,11 +159,43 @@ export function DocumentLibraryScreen() {
     return filteredDocuments.reduce((sum, doc) => sum + doc.downloads, 0);
   }, [filteredDocuments]);
 
-  const handleDelete = (document: Document) => {
-    toast({
-      title: 'Document Deleted',
-      description: `"${document.title}" has been deleted.`,
-    });
+  const refreshMaterials = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const filter: MaterialFilterDto = {};
+      const data = await materialService.searchMaterials('', filter);
+      setDocuments(data);
+    } catch (err) {
+      setError('Không thể tải thư viện tài liệu.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (document: Document) => {
+    try {
+      const success = await materialService.deleteMaterial(document.id, currentUserId);
+      if (success) {
+        toast({
+          title: 'Document Deleted',
+          description: `"${document.title}" has been deleted.`,
+        });
+        await refreshMaterials();
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Delete Failed',
+          description: 'You do not have permission to delete this document.',
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete document. Please try again.',
+      });
+    }
   };
 
   const handleShare = async (document: Document) => {
@@ -156,7 +219,40 @@ export function DocumentLibraryScreen() {
   const canDelete = (document: Document): boolean => {
     if (role === 'Manager') return true;
     if (role === 'Tutor' && document.uploadedBy === currentUserId) return true;
+    if (role === 'Student' && document.uploadedBy === currentUserId) return true;
     return false;
+  };
+
+  const canEdit = (document: Document): boolean => {
+    if (role === 'Manager') return true;
+    if (role === 'Tutor' && document.uploadedBy === currentUserId) return true;
+    if (role === 'Student' && document.uploadedBy === currentUserId) return true;
+    return false;
+  };
+
+  const handleEditAccess = async (document: Document, newAccessLevel: 'public' | 'restricted' | 'private') => {
+    try {
+      const success = await materialService.updateAccessLevel(document.id, newAccessLevel, currentUserId);
+      if (success) {
+        toast({
+          title: 'Access Updated',
+          description: `Access level for "${document.title}" has been updated.`,
+        });
+        await refreshMaterials();
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Update Failed',
+          description: 'You do not have permission to update this document.',
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update document. Please try again.',
+      });
+    }
   };
 
   const canManageAccess = role === 'Manager';
@@ -188,11 +284,21 @@ export function DocumentLibraryScreen() {
   };
 
   if (loading) {
-    return <div className="p-6 text-center text-muted-foreground">Đang tải tài liệu...</div>;
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        <p>Đang tải tài liệu...</p>
+        <p className="text-xs mt-2">Loading {documents.length} documents...</p>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="p-6 text-center text-muted-foreground">{error}</div>;
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        <p>{error}</p>
+        <p className="text-xs mt-2">Total documents in system: {documents.length}</p>
+      </div>
+    );
   }
 
   return (
@@ -205,8 +311,8 @@ export function DocumentLibraryScreen() {
             Access and manage course materials, assignments, and study resources.
           </p>
         </div>
-        {/* Upload Button - Hidden for Students */}
-        {role !== 'Student' && (
+        {/* Upload Button - Available for Students and Tutors */}
+        {(role === 'Student' || role === 'Tutor') && (
           <Button onClick={() => setShowUploadModal(true)} className="bg-primary hover:bg-primary-dark">
             <Upload className="mr-2 h-4 w-4" />
             Upload Document
@@ -286,8 +392,11 @@ export function DocumentLibraryScreen() {
 
       {/* Summary Stats */}
       <div className="flex gap-4 text-sm text-muted-foreground">
-        <span>{filteredDocuments.length} documents</span>
-        <span>{totalDownloads} downloads</span>
+        <span>{filteredDocuments.length} documents found</span>
+        <span>{totalDownloads} total downloads</span>
+        {documents.length > 0 && (
+          <span className="text-xs">({documents.length} total in library)</span>
+        )}
       </div>
 
       {/* Document List/Grid */}
@@ -298,8 +407,9 @@ export function DocumentLibraryScreen() {
           </CardContent>
         </Card>
       ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredDocuments.map((doc) => (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {paginatedDocuments.map((doc) => (
             <DocumentCard
               key={doc.id}
               document={doc}
@@ -311,14 +421,27 @@ export function DocumentLibraryScreen() {
                 setShowManageAccessModal(true);
               }}
               canDelete={canDelete(doc)}
+              canEdit={canEdit(doc)}
               canManageAccess={canManageAccess}
               getAccessBadge={getAccessBadge}
+              onEditAccess={handleEditAccess}
             />
           ))}
-        </div>
+          </div>
+          {totalPages > 1 && (
+            <div className="mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </>
       ) : (
-        <div className="space-y-4">
-          {filteredDocuments.map((doc) => (
+        <>
+          <div className="space-y-4">
+            {paginatedDocuments.map((doc) => (
             <DocumentCard
               key={doc.id}
               document={doc}
@@ -330,12 +453,24 @@ export function DocumentLibraryScreen() {
                 setShowManageAccessModal(true);
               }}
               canDelete={canDelete(doc)}
+              canEdit={canEdit(doc)}
               canManageAccess={canManageAccess}
               getAccessBadge={getAccessBadge}
+              onEditAccess={handleEditAccess}
               listView
             />
           ))}
-        </div>
+          </div>
+          {totalPages > 1 && (
+            <div className="mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </>
       )}
 
       {/* Upload Modal */}
@@ -364,7 +499,9 @@ interface DocumentCardProps {
   onShare: (doc: Document) => void;
   onDownload: (doc: Document) => void;
   onManageAccess: () => void;
+  onEditAccess?: (doc: Document, level: 'public' | 'restricted' | 'private') => void;
   canDelete: boolean;
+  canEdit: boolean;
   canManageAccess: boolean;
   getAccessBadge: (level: AccessLevel) => React.ReactNode;
   listView?: boolean;
@@ -376,7 +513,9 @@ function DocumentCard({
   onShare,
   onDownload,
   onManageAccess,
+  onEditAccess,
   canDelete,
+  canEdit,
   canManageAccess,
   getAccessBadge,
   listView = false,
@@ -424,6 +563,19 @@ function DocumentCard({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {canEdit && (
+                    <>
+                      <DropdownMenuItem onClick={() => onEditAccess?.(document, 'public')}>
+                        Set Public
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onEditAccess?.(document, 'restricted')}>
+                        Set Restricted
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onEditAccess?.(document, 'private')}>
+                        Set Private
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   {canDelete && (
                     <DropdownMenuItem onClick={() => onDelete(document)}>
                       Delete

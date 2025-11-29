@@ -6,6 +6,10 @@ class ProfileService {
   async getProfileByRole(role: Role): Promise<UserProfile> {
     return mockProfileRepository.getByRole(role);
   }
+
+  async getProfileByUserId(userId: string): Promise<UserProfile | undefined> {
+    return mockProfileRepository.getByUserId(userId);
+  }
 }
 
 export const profileService = new ProfileService();

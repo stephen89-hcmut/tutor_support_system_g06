@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export function Header() {
+export const Header = memo(function Header() {
   return (
     <header className="bg-[#0A84D6] text-white">
       <div className="container mx-auto px-4 py-3">
@@ -32,5 +33,5 @@ export function Header() {
       </div>
     </header>
   );
-}
+});
 
