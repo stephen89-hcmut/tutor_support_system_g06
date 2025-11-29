@@ -46,6 +46,14 @@ class MockProgressRepository {
     mockProgressRecords[index] = { ...mockProgressRecords[index], ...update };
     return mockProgressRecords[index];
   }
+
+  async delete(progressId: string): Promise<boolean> {
+    await simulateNetworkLatency();
+    const index = mockProgressRecords.findIndex((record) => record.recordId === progressId);
+    if (index === -1) return false;
+    mockProgressRecords.splice(index, 1);
+    return true;
+  }
 }
 
 export const mockProgressRepository = new MockProgressRepository();

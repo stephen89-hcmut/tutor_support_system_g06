@@ -1,4 +1,4 @@
-export type MeetingStatus = 'Scheduled' | 'Completed' | 'Cancelled';
+export type MeetingStatus = 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled';
 export type MeetingMode = 'Zoom' | 'Teams' | 'In-Person';
 export type CancelledBy = 'Student' | 'Tutor' | 'System';
 
@@ -18,6 +18,9 @@ export interface Meeting {
   cancelledBy?: CancelledBy;
   cancellationReason?: string;
   notes?: string;
+  actualStartTime?: string;
+  actualEndTime?: string;
 }
+
 
 

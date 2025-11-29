@@ -22,6 +22,7 @@ import { RescheduleMeetingScreen } from './RescheduleMeetingScreen';
 import type { Meeting, MeetingStatus } from '@/domain/entities/meeting';
 import { meetingService } from '@/application/services/meetingService';
 import { Calendar, Video, MapPin, MoreVertical, X } from 'lucide-react';
+import { useRole } from '@/contexts/RoleContext';
 
 interface MeetingsScreenProps {
   onCancel: (meetingId: string, cancelledBy: string, reason: string) => void;
@@ -32,6 +33,7 @@ export function MeetingsScreen({
   onCancel,
   onBookNewMeeting,
 }: MeetingsScreenProps) {
+  const { role, userId } = useRole();
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [rescheduleMeeting, setRescheduleMeeting] = useState<Meeting | null>(null);
@@ -46,7 +48,16 @@ export function MeetingsScreen({
       setLoading(true);
       setError(null);
       try {
-        const data = await meetingService.getAll();
+        let data: Meeting[] = [];
+
+        // Nếu là student thì chỉ load meetings theo studentId
+        if (role === 'Student' && userId) {
+          data = await meetingService.getByStudent(userId);
+        } else {
+          // Các role khác vẫn có thể xem toàn bộ (hoặc có thể tinh chỉnh sau)
+          data = await meetingService.getAll();
+        }
+
         if (!mounted) return;
         setMeetings(data);
       } catch (err) {
@@ -63,7 +74,7 @@ export function MeetingsScreen({
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [role, userId]);
 
   const meetingsByStatus = useMemo<Record<MeetingStatus, Meeting[]>>(() => {
     return {
@@ -103,6 +114,41 @@ export function MeetingsScreen({
     );
     setShowCancelModal(false);
     setSelectedMeeting(null);
+  };
+
+  const handleJoinMeeting = (meeting: Meeting) => {
+    // Xác minh quyền cơ bản: chỉ student/tutor liên quan mới join
+    if (role === 'Student' && userId && meeting.studentId !== userId) {
+      alert('Bạn không có quyền tham gia buổi học này.');
+      return;
+    }
+    if (role === 'Tutor' && userId && meeting.tutorId !== userId) {
+      alert('Bạn không có quyền tham gia buổi học này.');
+      return;
+    }
+
+    // Mở link hoặc hiển thị địa điểm
+    if (meeting.mode !== 'In-Person' && meeting.link) {
+      window.open(meeting.link, '_blank');
+    } else if (meeting.mode === 'In-Person' && meeting.location) {
+      alert(`Địa điểm: ${meeting.location}`);
+    } else {
+      alert('Không thể tham gia. Liên kết hoặc địa điểm không hợp lệ.');
+      return;
+    }
+
+    // Đánh dấu In Progress trong state (mock)
+    setMeetings((prev) =>
+      prev.map((m) =>
+        m.id === meeting.id
+          ? {
+              ...m,
+              status: 'In Progress',
+              actualStartTime: new Date().toISOString(),
+            }
+          : m,
+      ),
+    );
   };
 
   const getModeIcon = (mode: string) => {
@@ -219,6 +265,13 @@ export function MeetingsScreen({
                           {status === 'Scheduled' && (
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleJoinMeeting(meeting)}
+                                >
+                                  Join
+                                </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"

@@ -520,6 +520,9 @@ function DocumentCard({
   getAccessBadge,
   listView = false,
 }: DocumentCardProps) {
+  // Chỉ Manager mới thấy badge Public/Private và menu "..."
+  const showAccessControls = canManageAccess;
+
   if (listView) {
     return (
       <Card>
@@ -531,7 +534,7 @@ function DocumentCard({
                   <h3 className="text-lg font-semibold mb-1">{document.title}</h3>
                   <p className="text-sm text-muted-foreground mb-3">{document.description}</p>
                 </div>
-                {getAccessBadge(document.accessLevel)}
+                {showAccessControls && getAccessBadge(document.accessLevel)}
               </div>
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <span>{document.type}</span>
@@ -556,38 +559,40 @@ function DocumentCard({
                 <Share2 className="mr-2 h-4 w-4" />
                 Share
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {canEdit && (
-                    <>
-                      <DropdownMenuItem onClick={() => onEditAccess?.(document, 'public')}>
-                        Set Public
+              {showAccessControls && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {canEdit && (
+                      <>
+                        <DropdownMenuItem onClick={() => onEditAccess?.(document, 'public')}>
+                          Set Public
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onEditAccess?.(document, 'restricted')}>
+                          Set Restricted
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onEditAccess?.(document, 'private')}>
+                          Set Private
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    {canDelete && (
+                      <DropdownMenuItem onClick={() => onDelete(document)}>
+                        Delete
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onEditAccess?.(document, 'restricted')}>
-                        Set Restricted
+                    )}
+                    {canManageAccess && (
+                      <DropdownMenuItem onClick={onManageAccess}>
+                        Manage Access
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onEditAccess?.(document, 'private')}>
-                        Set Private
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  {canDelete && (
-                    <DropdownMenuItem onClick={() => onDelete(document)}>
-                      Delete
-                    </DropdownMenuItem>
-                  )}
-                  {canManageAccess && (
-                    <DropdownMenuItem onClick={onManageAccess}>
-                      Manage Access
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </CardContent>
@@ -600,7 +605,7 @@ function DocumentCard({
       <CardHeader>
         <div className="flex items-start justify-between">
           <CardTitle className="text-lg">{document.title}</CardTitle>
-          {getAccessBadge(document.accessLevel)}
+          {showAccessControls && getAccessBadge(document.accessLevel)}
         </div>
       </CardHeader>
       <CardContent>
@@ -627,25 +632,27 @@ function DocumentCard({
             <Share2 className="mr-2 h-4 w-4" />
             Share
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {canDelete && (
-                <DropdownMenuItem onClick={() => onDelete(document)}>
-                  Delete
-                </DropdownMenuItem>
-              )}
-              {canManageAccess && (
-                <DropdownMenuItem onClick={onManageAccess}>
-                  Manage Access
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {showAccessControls && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {canDelete && (
+                  <DropdownMenuItem onClick={() => onDelete(document)}>
+                    Delete
+                  </DropdownMenuItem>
+                )}
+                {canManageAccess && (
+                  <DropdownMenuItem onClick={onManageAccess}>
+                    Manage Access
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </CardContent>
     </Card>

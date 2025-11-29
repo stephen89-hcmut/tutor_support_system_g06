@@ -232,8 +232,8 @@ function App() {
       return <DocumentLibraryScreen />;
     }
 
-    // Handle find tutor screen
-    if (currentScreen === 'find-tutor') {
+    // Handle find tutor / book meeting screen
+    if (currentScreen === 'find-tutor' || currentScreen === 'book-meeting') {
       return (
         <FindTutorScreen
           onViewTutorProfile={(tutorId) => {

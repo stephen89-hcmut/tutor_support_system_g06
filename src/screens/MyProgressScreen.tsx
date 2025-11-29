@@ -24,10 +24,12 @@ import type { StudentProfile } from '@/domain/entities/student';
 import { progressService } from '@/application/services/progressService';
 import { studentService } from '@/application/services/studentService';
 import { getProgressTrend } from '@/domain/services/progressMetrics';
+import { useRole } from '@/contexts/RoleContext';
 
 type TrendPoint = ReturnType<typeof getProgressTrend>;
 
 export function MyProgressScreen() {
+  const { role, userId } = useRole();
   const [currentStudent, setCurrentStudent] = useState<StudentProfile | null>(null);
   const [studentRecords, setStudentRecords] = useState<ProgressRecord[]>([]);
   const [overallPerformance, setOverallPerformance] = useState(0);
@@ -47,9 +49,21 @@ export function MyProgressScreen() {
       setLoading(true);
       setError(null);
       try {
-        const students = await studentService.list();
-        const student = students[0] ?? null;
-        const progress = await progressService.getByStudent(student?.id ?? '1');
+        let student: StudentProfile | null = null;
+        let targetStudentId: string;
+
+        // Nếu đang đăng nhập với role Student thì dùng userId (s1, s2, ...) cho progress
+        if (role === 'Student' && userId) {
+          targetStudentId = userId;
+          student = await studentService.getByAccountUserId(userId);
+        } else {
+          // Fallback demo: dùng student hồ sơ đầu tiên
+          const students = await studentService.list();
+          student = students[0] ?? null;
+          targetStudentId = student ? student.id : '1';
+        }
+
+        const progress = await progressService.getByStudent(targetStudentId);
         if (!mounted) return;
         setCurrentStudent(student);
         setStudentRecords(progress.records);
@@ -70,7 +84,7 @@ export function MyProgressScreen() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [role, userId]);
 
   const radarData = useMemo(
     () => [

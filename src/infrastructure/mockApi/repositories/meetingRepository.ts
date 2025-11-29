@@ -29,6 +29,14 @@ class MockMeetingRepository {
     return mockMeetings[idx];
   }
 
+  async delete(meetingId: string): Promise<boolean> {
+    await simulateNetworkLatency();
+    const idx = mockMeetings.findIndex((meeting) => meeting.id === meetingId);
+    if (idx === -1) return false;
+    mockMeetings.splice(idx, 1);
+    return true;
+  }
+
   async listByTutor(tutorId: string): Promise<Meeting[]> {
     await simulateNetworkLatency();
     return mockMeetings.filter((meeting) => meeting.tutorId === tutorId).map((meeting) => ({ ...meeting }));
@@ -41,5 +49,6 @@ class MockMeetingRepository {
 }
 
 export const mockMeetingRepository = new MockMeetingRepository();
+
 
 
