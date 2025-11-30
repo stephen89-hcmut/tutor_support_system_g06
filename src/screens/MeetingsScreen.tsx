@@ -53,8 +53,11 @@ export function MeetingsScreen({
         // Nếu là student thì chỉ load meetings theo studentId
         if (role === 'Student' && userId) {
           data = await meetingService.getByStudent(userId);
+        } else if (role === 'Tutor' && userId) {
+          // Nếu là tutor thì chỉ load meetings theo tutorId
+          data = await meetingService.getByTutor(userId);
         } else {
-          // Các role khác vẫn có thể xem toàn bộ (hoặc có thể tinh chỉnh sau)
+          // Manager có thể xem toàn bộ
           data = await meetingService.getAll();
         }
 

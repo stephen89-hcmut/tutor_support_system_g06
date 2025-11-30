@@ -1,46 +1,66 @@
 import { memo } from 'react';
-import { HelpCircle, Youtube, Linkedin } from 'lucide-react';
+import { HelpCircle, Facebook, Pin, Youtube, Linkedin, Twitter } from 'lucide-react';
+import { useLanguage } from '@/contexts/useLanguage';
 
 export const Footer = memo(function Footer() {
+  const { t } = useLanguage();
+
   return (
-    <footer className="bg-[#0A84D6] text-white mt-auto">
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between">
-          {/* Left: Copyright */}
-          <div className="flex flex-col">
-            <p className="text-sm">Copyright © 2025 - Trường Đại học Bách Khoa TPHCM</p>
-            <p className="text-sm">Software Engineering L06</p>
+    <footer className="bg-gradient-to-r from-blue-700 to-blue-600 text-white mt-auto">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center flex-col gap-6">
+          {/* Center: Copyright and Course Info */}
+          <div className="text-center">
+            <p className="text-sm font-medium">{t('footer.copyright')}</p>
+            <p className="text-sm opacity-90">{t('footer.course')}</p>
           </div>
 
-          {/* Right: Social Media Icons */}
-          <div className="flex items-center gap-3">
+          {/* Social Media Icons */}
+          <div className="flex items-center gap-4">
             <a
-              href="#"
-              className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center hover:bg-blue-700 transition-colors"
+              href="https://facebook.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 bg-blue-600 rounded flex items-center justify-center hover:bg-blue-700 transition-colors shadow-md"
               aria-label="Facebook"
             >
-              <span className="text-white font-bold text-xs">f</span>
+              <Facebook className="h-5 w-5 text-white" />
             </a>
             <a
-              href="#"
-              className="w-8 h-8 bg-red-600 rounded flex items-center justify-center hover:bg-red-700 transition-colors"
+              href="https://pinterest.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 bg-red-600 rounded flex items-center justify-center hover:bg-red-700 transition-colors shadow-md"
               aria-label="Pinterest"
             >
-              <span className="text-white font-bold text-xs">P</span>
+              <Pin className="h-5 w-5 text-white" />
             </a>
             <a
-              href="#"
-              className="w-8 h-8 bg-red-500 rounded flex items-center justify-center hover:bg-red-600 transition-colors"
+              href="https://twitter.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 bg-cyan-500 rounded flex items-center justify-center hover:bg-cyan-600 transition-colors shadow-md"
+              aria-label="Twitter"
+            >
+              <Twitter className="h-5 w-5 text-white" />
+            </a>
+            <a
+              href="https://youtube.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 bg-red-600 rounded flex items-center justify-center hover:bg-red-700 transition-colors shadow-md"
               aria-label="YouTube"
             >
-              <Youtube className="h-4 w-4 text-white" />
+              <Youtube className="h-5 w-5 text-white" />
             </a>
             <a
-              href="#"
-              className="w-8 h-8 bg-blue-700 rounded flex items-center justify-center hover:bg-blue-800 transition-colors"
+              href="https://linkedin.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 bg-blue-700 rounded flex items-center justify-center hover:bg-blue-800 transition-colors shadow-md"
               aria-label="LinkedIn"
             >
-              <Linkedin className="h-4 w-4 text-white" />
+              <Linkedin className="h-5 w-5 text-white" />
             </a>
           </div>
         </div>

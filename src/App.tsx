@@ -17,6 +17,7 @@ import { DashboardScreen } from './screens/DashboardScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { FindTutorScreen } from './screens/FindTutorScreen';
 import { StudentAnalyticsScreen } from './screens/StudentAnalyticsScreen';
+import { TutorStudentsScreen } from './screens/TutorStudentsScreen';
 import type { UserEntity } from '@/domain/entities/user';
 import { meetingService } from '@/application/services/meetingService';
 import { useToast } from './components/ui/use-toast';
@@ -205,8 +206,13 @@ function App() {
       );
     }
 
-    // Handle students management screen
+    // Handle students management screen (for manager/tutor)
     if (currentScreen === 'students') {
+      // For tutor: show their students with record progress capability
+      if (role === 'Tutor') {
+        return <TutorStudentsScreen />;
+      }
+      // For manager: show all students management
       return (
         <StudentManagementScreen
           onViewStudent={handleViewStudent}
