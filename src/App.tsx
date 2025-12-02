@@ -4,11 +4,18 @@ import { useRole } from './contexts/RoleContext';
 import { LoginScreen } from './screens/LoginScreen';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
+import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
+import { Button } from './components/ui/button';
 import { StudentManagementScreen } from './screens/StudentManagementScreen';
 import { StudentDetailScreen } from './screens/StudentDetailScreen';
 import { MeetingsScreen } from './screens/MeetingsScreen';
+import { MeetingManagementScreen } from './screens/MeetingManagementScreen';
 import { DocumentLibraryScreen } from './screens/DocumentLibraryScreen';
 import { TutorProfileScreen } from './screens/TutorProfileScreen';
+import { ProfileScreen } from './screens/ProfileScreen';
+import { PermissionsManagementScreen } from './screens/PermissionsManagementScreen';
+import { DataSyncScreen } from './screens/DataSyncScreen';
+import { ReportsScreen } from './screens/ReportsScreen';
 import { AIFeedbackAnalysisScreen } from './screens/AIFeedbackAnalysisScreen';
 import { FeedbackScreen } from './screens/FeedbackScreen';
 import { MyProgressScreen } from './screens/MyProgressScreen';
@@ -238,14 +245,32 @@ function App() {
       return <DocumentLibraryScreen />;
     }
 
-    // Handle find tutor / book meeting screen
+    // Handle find tutor / book meeting screen (Student only - UCB1.1)
     if (currentScreen === 'find-tutor' || currentScreen === 'book-meeting') {
+      if (role !== 'Student') {
+        return (
+          <div className="flex items-center justify-center min-h-screen bg-gray-50">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle>Access Denied</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">Only students can book meetings with tutors.</p>
+                <Button onClick={handleBack}>Go Back</Button>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      }
       return (
         <FindTutorScreen
           onViewTutorProfile={(tutorId) => {
             setCurrentStudentId(tutorId); // Reuse for tutor ID
             setPreviousScreen(currentScreen);
             setCurrentScreen('tutorProfile');
+          }}
+          onBookingSuccess={() => {
+            setCurrentScreen('meetings');
           }}
         />
       );
@@ -303,9 +328,26 @@ function App() {
       );
     }
 
-    // Handle settings screen
+    // Handle settings screen (not available for Manager)
     if (currentScreen === 'settings') {
+      if (role === 'Manager') {
+        setCurrentScreen('dashboard');
+        return <DashboardScreen onNavigate={handleNavigate} />;
+      }
       return <SettingsScreen />;
+    }
+
+    // Handle profile screen (not available for Manager)
+    if (currentScreen === 'profile') {
+      if (role === 'Manager') {
+        setCurrentScreen('dashboard');
+        return <DashboardScreen onNavigate={handleNavigate} />;
+      }
+      return (
+        <ProfileScreen
+          onBack={() => setCurrentScreen('dashboard')}
+        />
+      );
     }
 
     // Handle dashboard screen
@@ -317,6 +359,57 @@ function App() {
     if (currentScreen === 'analytics') {
       return (
         <StudentAnalyticsScreen
+          onBack={() => setCurrentScreen('dashboard')}
+        />
+      );
+    }
+
+    // Handle permissions screen (only for Manager)
+    if (currentScreen === 'permissions') {
+      if (role !== 'Manager') {
+        setCurrentScreen('dashboard');
+        return <DashboardScreen onNavigate={handleNavigate} />;
+      }
+      return (
+        <PermissionsManagementScreen
+          onBack={() => setCurrentScreen('dashboard')}
+        />
+      );
+    }
+
+    // Handle data sync screen (only for Manager)
+    if (currentScreen === 'data-sync') {
+      if (role !== 'Manager') {
+        setCurrentScreen('dashboard');
+        return <DashboardScreen onNavigate={handleNavigate} />;
+      }
+      return (
+        <DataSyncScreen
+          onBack={() => setCurrentScreen('dashboard')}
+        />
+      );
+    }
+
+    if (currentScreen === 'reports') {
+      if (role !== 'Manager') {
+        setCurrentScreen('dashboard');
+        return <DashboardScreen onNavigate={handleNavigate} />;
+      }
+      return (
+        <ReportsScreen
+          onBack={() => setCurrentScreen('dashboard')}
+        />
+      );
+    }
+
+    // Handle students list screen (only for Manager)
+    if (currentScreen === 'manage-meetings') {
+      if (role !== 'Manager') {
+        setCurrentScreen('dashboard');
+        return <DashboardScreen onNavigate={handleNavigate} />;
+      }
+      return (
+        <MeetingManagementScreen
           onBack={() => setCurrentScreen('dashboard')}
         />
       );

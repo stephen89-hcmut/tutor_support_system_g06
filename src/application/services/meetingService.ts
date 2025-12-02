@@ -18,6 +18,10 @@ class MeetingService {
     return mockMeetingRepository.listByStudent(studentId);
   }
 
+  async getListMeetingByStudentId(studentId: string): Promise<Meeting[]> {
+    return mockMeetingRepository.listByStudent(studentId);
+  }
+
   async schedule(meeting: Meeting): Promise<Meeting> {
     return mockMeetingRepository.create(meeting);
   }

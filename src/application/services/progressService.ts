@@ -18,6 +18,10 @@ class ProgressService {
     };
   }
 
+  async getListProgressById(studentId: string): Promise<ProgressRecord[]> {
+    return mockProgressRepository.listByStudent(studentId);
+  }
+
   async addRecord(record: ProgressRecord) {
     return mockProgressRepository.create(record);
   }

@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Search, Sparkles, Grid, List } from 'lucide-react';
+import { Search, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { TutorProfile } from '@/domain/entities/tutor';
 import { tutorService } from '@/application/services/tutorService';
 import { AITutorSuggestionScreen } from './AITutorSuggestionScreen';
@@ -18,9 +18,10 @@ import { BookMeetingModal } from '@/components/BookMeetingModal';
 
 interface FindTutorScreenProps {
   onViewTutorProfile?: (tutorId: string) => void;
+  onBookingSuccess?: () => void;
 }
 
-export function FindTutorScreen({ onViewTutorProfile }: FindTutorScreenProps) {
+export function FindTutorScreen({ onViewTutorProfile, onBookingSuccess }: FindTutorScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [department, setDepartment] = useState<string>('all');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
@@ -28,13 +29,14 @@ export function FindTutorScreen({ onViewTutorProfile }: FindTutorScreenProps) {
   const [gender, setGender] = useState<string>('all');
   const [minRating, setMinRating] = useState<string>('all');
   const [language, setLanguage] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [showAISuggestion, setShowAISuggestion] = useState(false);
   const [tutors, setTutors] = useState<TutorProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTutor, setSelectedTutor] = useState<TutorProfile | null>(null);
   const [showBookModal, setShowBookModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
 
   useEffect(() => {
     let mounted = true;
@@ -77,7 +79,6 @@ export function FindTutorScreen({ onViewTutorProfile }: FindTutorScreenProps) {
   const filteredTutors = useMemo(() => {
     let tutorList = [...tutors];
 
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       tutorList = tutorList.filter(
@@ -88,19 +89,16 @@ export function FindTutorScreen({ onViewTutorProfile }: FindTutorScreenProps) {
       );
     }
 
-    // Department filter
     if (department !== 'all') {
       tutorList = tutorList.filter(tutor => tutor.department === department);
     }
 
-    // Skills filter
     if (selectedSkills.length > 0) {
       tutorList = tutorList.filter(tutor =>
         selectedSkills.some(skill => tutor.skills.includes(skill))
       );
     }
 
-    // Meeting mode filter
     if (meetingMode !== 'all') {
       tutorList = tutorList.filter(tutor => {
         if (meetingMode === 'online') {
@@ -112,21 +110,18 @@ export function FindTutorScreen({ onViewTutorProfile }: FindTutorScreenProps) {
       });
     }
 
-    // Gender filter
     if (gender !== 'all') {
       tutorList = tutorList.filter(tutor => tutor.gender === gender);
     }
 
-    // Minimum rating filter
     if (minRating !== 'all') {
       const minRatingValue = parseFloat(minRating);
       tutorList = tutorList.filter(tutor => tutor.rating >= minRatingValue);
     }
 
-    // Language filter
     if (language !== 'all') {
       tutorList = tutorList.filter(tutor =>
-        tutor.languages.includes(language as any) || tutor.languages.includes('Both')
+        (tutor.languages as string[]).includes(language) || tutor.languages.includes('Both')
       );
     }
 
@@ -140,8 +135,8 @@ export function FindTutorScreen({ onViewTutorProfile }: FindTutorScreenProps) {
   };
 
   const handleFindTutors = () => {
-    // Results are already filtered, just ensure we're not showing AI suggestion
     setShowAISuggestion(false);
+    setCurrentPage(1);
   };
 
   const handleAISuggestion = () => {
@@ -171,6 +166,11 @@ export function FindTutorScreen({ onViewTutorProfile }: FindTutorScreenProps) {
       />
     );
   }
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredTutors.length / itemsPerPage);
+  const startIdx = (currentPage - 1) * itemsPerPage;
+  const paginatedTutors = filteredTutors.slice(startIdx, startIdx + itemsPerPage);
 
   return (
     <div className="space-y-6">
@@ -343,22 +343,6 @@ export function FindTutorScreen({ onViewTutorProfile }: FindTutorScreenProps) {
               <SelectItem value="sessions">Most Sessions</SelectItem>
             </SelectContent>
           </Select>
-          <div className="flex gap-2">
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'outline'}
-              size="icon"
-              onClick={() => setViewMode('grid')}
-            >
-              <Grid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'outline'}
-              size="icon"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -370,19 +354,64 @@ export function FindTutorScreen({ onViewTutorProfile }: FindTutorScreenProps) {
           </CardContent>
         </Card>
       ) : (
-        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'}>
-          {filteredTutors.map((tutor) => (
-            <TutorCard
-              key={tutor.id}
-              tutor={tutor}
-              onBook={() => {
-                setSelectedTutor(tutor);
-                setShowBookModal(true);
-              }}
-              onViewProfile={() => onViewTutorProfile?.(tutor.id)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {paginatedTutors.map((tutor) => (
+              <TutorCard
+                key={tutor.id}
+                tutor={tutor}
+                onBook={() => {
+                  setSelectedTutor(tutor);
+                  setShowBookModal(true);
+                }}
+                onViewProfile={() => onViewTutorProfile?.(tutor.id)}
+              />
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8 pt-6 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Previous
+              </Button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={page === currentPage ? 'default' : 'outline'}
+                    size="sm"
+                    className="w-10 h-10 p-0"
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+
+              <span className="text-sm text-muted-foreground ml-4">
+                Page {currentPage} of {totalPages} • Showing {paginatedTutors.length} of {filteredTutors.length}
+              </span>
+            </div>
+          )}
+        </>
       )}
 
       {/* Book Meeting Modal */}
@@ -394,6 +423,7 @@ export function FindTutorScreen({ onViewTutorProfile }: FindTutorScreenProps) {
           onBookComplete={() => {
             setShowBookModal(false);
             setSelectedTutor(null);
+            onBookingSuccess?.();
           }}
         />
       )}

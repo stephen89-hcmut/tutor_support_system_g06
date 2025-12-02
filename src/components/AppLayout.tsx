@@ -5,12 +5,14 @@ import {
   Video, 
   TrendingUp, 
   BookOpen, 
-  Settings,
   Users,
   Shield,
   BarChart3,
   MessageSquare,
-  LogOut
+  LogOut,
+  User,
+  Database,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,10 +37,9 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
   Student: [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'meetings', label: 'Meetings', icon: Video },
-    // { id: 'find-tutor', label: 'Find Tutor', icon: Search },
-    { id: 'my-progress', label: 'My Progress', icon: TrendingUp },
+    { id: 'my-progress', label: 'Progress', icon: TrendingUp },
     { id: 'library', label: 'Library', icon: BookOpen },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'profile', label: 'Profile', icon: User },
   ],
   Tutor: [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -46,16 +47,16 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
     { id: 'students', label: 'My Students', icon: Users },
     { id: 'feedback', label: 'Feedback', icon: MessageSquare },
     { id: 'library', label: 'Library', icon: BookOpen },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'profile', label: 'Profile', icon: User },
   ],
   Manager: [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'meetings', label: 'Meetings', icon: Video },
-    { id: 'users', label: 'Users', icon: Users },
+    { id: 'manage-meetings', label: 'Meetings', icon: Video },
     { id: 'permissions', label: 'Permissions', icon: Shield },
+    { id: 'data-sync', label: 'Data Sync', icon: Database },
+    { id: 'reports', label: 'Reports', icon: FileText },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'library', label: 'Library', icon: BookOpen },
-    { id: 'settings', label: 'Settings', icon: Settings },
   ],
 };
 

@@ -1,4 +1,3 @@
-import type { StudentProfile } from '@/domain/entities/student';
 import { mockStudents } from './mockStudents';
 
 export interface StudentFeedback {

@@ -40,133 +40,93 @@ const topics = [
 // Meeting modes
 const modes: Array<'Zoom' | 'Teams' | 'In-Person'> = ['Zoom', 'Teams', 'In-Person'];
 
-// Generate meetings for each student with proper distribution
+// Generate meetings with exact distribution:
+// Total: 450
+// Completed: 300
+// Upcoming (Scheduled): 100
+// Cancelled: 50
 export const mockMeetings: Meeting[] = [];
 
-mockStudentAccounts.forEach((student) => {
-  // Each student has 20-50 total meetings
-  const totalMeetings = 20 + Math.floor(Math.random() * 31); // 20-50
-  
-  // 15-35 completed meetings
-  const completedCount = 15 + Math.floor(Math.random() * 21); // 15-35
-  
-  // 2-3 upcoming (scheduled) meetings
-  const upcomingCount = 2 + Math.floor(Math.random() * 2); // 2-3
-  
-  // Remaining are cancelled
-  const cancelledCount = totalMeetings - completedCount - upcomingCount;
-  
-  // Select 3-5 unique tutors for this student
-  const numTutors = 3 + Math.floor(Math.random() * 3); // 3-5
-  const selectedTutors: typeof mockTutorAccounts = [];
-  const tutorIndices = new Set<number>();
-  
-  while (selectedTutors.length < numTutors && tutorIndices.size < mockTutorAccounts.length) {
-    const index = Math.floor(Math.random() * mockTutorAccounts.length);
-    if (!tutorIndices.has(index)) {
-      tutorIndices.add(index);
-      selectedTutors.push(mockTutorAccounts[index]);
-    }
+const meetingCounts = {
+  completed: 300,
+  scheduled: 100,
+  cancelled: 50,
+};
+
+let meetingId = 0;
+const today = new Date();
+
+// Helper to generate a meeting
+function createMeeting(
+  status: 'Completed' | 'Scheduled' | 'Cancelled',
+): Meeting {
+  const studentIndex = Math.floor(Math.random() * mockStudentAccounts.length);
+  const tutorIndex = Math.floor(Math.random() * mockTutorAccounts.length);
+  const student = mockStudentAccounts[studentIndex];
+  const tutor = mockTutorAccounts[tutorIndex];
+
+  let meetingDate: Date;
+  if (status === 'Completed') {
+    // Past dates (up to 180 days ago)
+    const daysAgo = 5 + Math.floor(Math.random() * 180);
+    meetingDate = new Date(today);
+    meetingDate.setDate(meetingDate.getDate() - daysAgo);
+  } else if (status === 'Scheduled') {
+    // Future dates (1-60 days ahead)
+    const daysAhead = 1 + Math.floor(Math.random() * 60);
+    meetingDate = new Date(today);
+    meetingDate.setDate(meetingDate.getDate() + daysAhead);
+  } else {
+    // Cancelled: past dates (5-150 days ago)
+    const daysAgo = 5 + Math.floor(Math.random() * 150);
+    meetingDate = new Date(today);
+    meetingDate.setDate(meetingDate.getDate() - daysAgo);
   }
-  
-  const startDate = new Date('2024-09-01');
-  const today = new Date();
-  
-  // Generate completed meetings (past dates)
-  for (let i = 0; i < completedCount; i++) {
-    const tutor = selectedTutors[Math.floor(Math.random() * selectedTutors.length)];
-    const daysOffset = Math.floor(Math.random() * 90); // Past 90 days
-    const meetingDate = new Date(startDate);
-    meetingDate.setDate(meetingDate.getDate() + daysOffset);
-    
-    // Ensure it's in the past
-    if (meetingDate > today) {
-      meetingDate.setDate(meetingDate.getDate() - 30);
-    }
-    
-    const dateStr = meetingDate.toISOString().split('T')[0];
-    const times = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
-    const time = times[Math.floor(Math.random() * times.length)];
-    const topic = topics[Math.floor(Math.random() * topics.length)];
-    const mode = modes[Math.floor(Math.random() * modes.length)];
-    
-    mockMeetings.push({
-      id: `m-${student.userId}-completed-${i + 1}`,
-      date: dateStr,
-      time,
-      studentId: student.userId,
-      studentName: getStudentName(student.username),
-      tutorId: tutor.userId,
-      tutorName: getTutorName(tutor.username),
-      topic,
-      mode,
-      status: 'Completed',
-      link: mode !== 'In-Person' ? `https://meet.google.com/${Math.random().toString(36).substring(7)}` : undefined,
-      location: mode === 'In-Person' ? 'HCMUT Campus - Room A3.201' : undefined,
-      notes: 'Session completed successfully.',
-    });
+
+  const dateStr = meetingDate.toISOString().split('T')[0];
+  const times = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+  const time = times[Math.floor(Math.random() * times.length)];
+  const topic = topics[Math.floor(Math.random() * topics.length)];
+  const mode = modes[Math.floor(Math.random() * modes.length)];
+
+  meetingId++;
+
+  const meeting: Meeting = {
+    id: `m-${meetingId}`,
+    date: dateStr,
+    time,
+    studentId: student.userId,
+    studentName: getStudentName(student.username),
+    tutorId: tutor.userId,
+    tutorName: getTutorName(tutor.username),
+    topic,
+    mode,
+    status,
+    link: mode !== 'In-Person' ? `https://meet.google.com/${Math.random().toString(36).substring(7)}` : undefined,
+    location: mode === 'In-Person' ? 'HCMUT Campus - Room A3.201' : undefined,
+  };
+
+  if (status === 'Completed') {
+    meeting.notes = 'Session completed successfully.';
+  } else if (status === 'Cancelled') {
+    meeting.cancelledBy = Math.random() > 0.5 ? 'Student' : 'Tutor';
+    meeting.cancellationReason = Math.random() > 0.5 ? 'Personal emergency' : 'Cannot attend';
   }
-  
-  // Generate upcoming meetings (future dates)
-  for (let i = 0; i < upcomingCount; i++) {
-    const tutor = selectedTutors[Math.floor(Math.random() * selectedTutors.length)];
-    const daysOffset = 1 + Math.floor(Math.random() * 30); // Next 30 days
-    const meetingDate = new Date(today);
-    meetingDate.setDate(meetingDate.getDate() + daysOffset);
-    const dateStr = meetingDate.toISOString().split('T')[0];
-    
-    const times = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
-    const time = times[Math.floor(Math.random() * times.length)];
-    const topic = topics[Math.floor(Math.random() * topics.length)];
-    const mode = modes[Math.floor(Math.random() * modes.length)];
-    
-    mockMeetings.push({
-      id: `m-${student.userId}-upcoming-${i + 1}`,
-      date: dateStr,
-      time,
-      studentId: student.userId,
-      studentName: getStudentName(student.username),
-      tutorId: tutor.userId,
-      tutorName: getTutorName(tutor.username),
-      topic,
-      mode,
-      status: 'Scheduled',
-      link: mode !== 'In-Person' ? `https://meet.google.com/${Math.random().toString(36).substring(7)}` : undefined,
-      location: mode === 'In-Person' ? 'HCMUT Campus - Room A3.201' : undefined,
-    });
-  }
-  
-  // Generate cancelled meetings
-  for (let i = 0; i < cancelledCount; i++) {
-    const tutor = selectedTutors[Math.floor(Math.random() * selectedTutors.length)];
-    const daysOffset = Math.floor(Math.random() * 90);
-    const meetingDate = new Date(startDate);
-    meetingDate.setDate(meetingDate.getDate() + daysOffset);
-    
-    // Ensure it's in the past
-    if (meetingDate > today) {
-      meetingDate.setDate(meetingDate.getDate() - 30);
-    }
-    
-    const dateStr = meetingDate.toISOString().split('T')[0];
-    const times = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
-    const time = times[Math.floor(Math.random() * times.length)];
-    const topic = topics[Math.floor(Math.random() * topics.length)];
-    const mode = modes[Math.floor(Math.random() * modes.length)];
-    
-    mockMeetings.push({
-      id: `m-${student.userId}-cancelled-${i + 1}`,
-      date: dateStr,
-      time,
-      studentId: student.userId,
-      studentName: getStudentName(student.username),
-      tutorId: tutor.userId,
-      tutorName: getTutorName(tutor.username),
-      topic,
-      mode,
-      status: 'Cancelled',
-      cancelledBy: Math.random() > 0.5 ? 'Student' : 'Tutor',
-      cancellationReason: 'Personal emergency',
-    });
-  }
-});
+
+  return meeting;
+}
+
+// Generate completed meetings
+for (let i = 0; i < meetingCounts.completed; i++) {
+  mockMeetings.push(createMeeting('Completed'));
+}
+
+// Generate scheduled meetings
+for (let i = 0; i < meetingCounts.scheduled; i++) {
+  mockMeetings.push(createMeeting('Scheduled'));
+}
+
+// Generate cancelled meetings
+for (let i = 0; i < meetingCounts.cancelled; i++) {
+  mockMeetings.push(createMeeting('Cancelled'));
+}

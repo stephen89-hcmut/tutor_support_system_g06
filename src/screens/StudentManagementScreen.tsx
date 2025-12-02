@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { MoreVertical, Users, CheckCircle, AlertTriangle, Star } from 'lucide-react';
+import { PaginationEnhanced } from '@/components/ui/pagination-enhanced';
 import type { StudentProfile } from '@/domain/entities/student';
 import { studentService } from '@/application/services/studentService';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -37,6 +38,9 @@ export function StudentManagementScreen({
 }: StudentManagementScreenProps) {
   const { data, loading, error } = useAsyncData<StudentProfile[]>(() => studentService.list(), []);
   const students = data ?? [];
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  
   const stats = useMemo(() => {
     if (!students.length) {
       return { total: 0, active: 0, atRisk: 0, avgRating: '0.0' };
@@ -118,75 +122,98 @@ export function StudentManagementScreen({
           <CardTitle>Students</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>ID</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {students.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell className="font-medium">{student.name}</TableCell>
-                  <TableCell>{student.studentId}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Progress value={student.progress} className="w-24" />
-                      <span className="text-sm text-muted-foreground">
-                        {student.progress}%
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        student.status === 'At Risk'
-                          ? 'danger'
-                          : student.status === 'Active'
-                          ? 'success'
-                          : 'secondary'
-                      }
-                    >
-                      {student.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onViewStudent(student.id)}>
-                          View Profile
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onRecordProgress(student.id)}
-                        >
-                          Record Progress
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onViewProgress(student.id)}
-                        >
-                          View Progress
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onViewFeedback(student.id)}
-                        >
-                          View Feedback
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          {(() => {
+            const totalPages = Math.ceil(students.length / itemsPerPage);
+            const startIdx = (currentPage - 1) * itemsPerPage;
+            const paginatedStudents = students.slice(startIdx, startIdx + itemsPerPage);
+
+            return (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Progress</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedStudents.map((student) => (
+                      <TableRow key={student.id}>
+                        <TableCell className="font-medium">{student.name}</TableCell>
+                        <TableCell>{student.studentId}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Progress value={student.progress} className="w-24" />
+                            <span className="text-sm text-muted-foreground">
+                              {student.progress}%
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              student.status === 'At Risk'
+                                ? 'danger'
+                                : student.status === 'Active'
+                                ? 'success'
+                                : 'secondary'
+                            }
+                          >
+                            {student.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => onViewStudent(student.id)}>
+                                View Profile
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => onRecordProgress(student.id)}
+                              >
+                                Record Progress
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => onViewProgress(student.id)}
+                              >
+                                View Progress
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => onViewFeedback(student.id)}
+                              >
+                                View Feedback
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center mt-6 pt-4">
+                    <PaginationEnhanced
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                      onItemsPerPageChange={setItemsPerPage}
+                    />
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </CardContent>
       </Card>
 
