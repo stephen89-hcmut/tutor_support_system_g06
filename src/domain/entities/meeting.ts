@@ -2,6 +2,15 @@ export type MeetingStatus = 'Scheduled' | 'In Progress' | 'Completed' | 'Cancell
 export type MeetingMode = 'Zoom' | 'Teams' | 'In-Person';
 export type CancelledBy = 'Student' | 'Tutor' | 'System';
 
+export interface StudentRating {
+  knowledge: number;
+  communication: number;
+  helpfulness: number;
+  punctuality: number;
+  comment?: string;
+  submittedAt?: string;
+}
+
 export interface Meeting {
   id: string;
   date: string;
@@ -20,6 +29,7 @@ export interface Meeting {
   notes?: string;
   actualStartTime?: string;
   actualEndTime?: string;
+  studentRating?: StudentRating;
 }
 
 
