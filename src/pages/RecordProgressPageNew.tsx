@@ -157,26 +157,6 @@ export function RecordProgressPageNew({
     }
   };
 
-  const getRatingColor = (rating: string) => {
-    switch (rating) {
-      case 'Excellent': return 'bg-green-500 text-white';
-      case 'Good': return 'bg-blue-500 text-white';
-      case 'Average': return 'bg-orange-500 text-white';
-      case 'Needs Improvement': return 'bg-red-500 text-white';
-      default: return 'bg-gray-500 text-white';
-    }
-  };
-
-  const getRatingLabel = (rating: string) => {
-    switch (rating) {
-      case 'Excellent': return 'Excellent';
-      case 'Good': return 'Good';
-      case 'Average': return 'Average';
-      case 'Needs Improvement': return 'Weak';
-      default: return rating;
-    }
-  };
-
   if (loading) {
     return <div className="p-6 text-center">Loading sessions...</div>;
   }
@@ -184,18 +164,23 @@ export function RecordProgressPageNew({
   // Show form when session is selected
   if (selectedSession) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Record Session Progress</h1>
-            <p className="text-sm text-gray-500 mt-1">Document student performance and learning outcomes</p>
+        <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+          <div className="max-w-4xl mx-auto px-6 py-4">
+            <Button
+              variant="ghost"
+              onClick={() => setSelectedSession(null)}
+              className="text-blue-600 hover:bg-blue-50 px-0 mb-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Sessions
+            </Button>
           </div>
-          <Button variant="outline" onClick={() => setSelectedSession(null)}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Sessions
-          </Button>
         </div>
+
+        {/* Main Content */}
+        <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
 
         {/* Session Info Cards */}
         <div className="grid grid-cols-2 gap-4">
@@ -223,7 +208,7 @@ export function RecordProgressPageNew({
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                   <span className="text-lg font-semibold text-green-700">
-                    {studentAccount?.username.substring(3, 5).toUpperCase()}
+                    {studentAccount?.username.substring(0, 1).toUpperCase()}
                   </span>
                 </div>
                 <div className="flex-1">
@@ -284,14 +269,9 @@ export function RecordProgressPageNew({
               <div className="space-y-6">
                 {/* Understanding */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-3">
                     <Label className="text-sm font-medium">Understanding of Concepts</Label>
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm font-bold text-blue-600">{understanding}%</span>
-                      <span className="text-xs text-gray-500">
-                        {understanding < 50 ? 'Needs Work' : understanding < 80 ? 'Excellent' : 'Excellent'}
-                      </span>
-                    </div>
+                    <span className="text-sm font-bold text-blue-600">{understanding}%</span>
                   </div>
                   <input
                     type="range"
@@ -299,20 +279,19 @@ export function RecordProgressPageNew({
                     max="100"
                     value={understanding}
                     onChange={(e) => setUnderstanding(Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    className="w-full h-2 bg-blue-300 rounded-lg appearance-none cursor-pointer accent-blue-600"
                   />
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-gray-500">Needs Work</span>
+                    <span className="text-xs text-gray-500">Excellent</span>
+                  </div>
                 </div>
 
                 {/* Problem Solving */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-3">
                     <Label className="text-sm font-medium">Problem Solving Skills</Label>
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm font-bold text-blue-600">{problemSolving}%</span>
-                      <span className="text-xs text-gray-500">
-                        {problemSolving < 50 ? 'Needs Work' : problemSolving < 80 ? 'Excellent' : 'Excellent'}
-                      </span>
-                    </div>
+                    <span className="text-sm font-bold text-blue-600">{problemSolving}%</span>
                   </div>
                   <input
                     type="range"
@@ -320,20 +299,19 @@ export function RecordProgressPageNew({
                     max="100"
                     value={problemSolving}
                     onChange={(e) => setProblemSolving(Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    className="w-full h-2 bg-blue-300 rounded-lg appearance-none cursor-pointer accent-blue-600"
                   />
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-gray-500">Needs Work</span>
+                    <span className="text-xs text-gray-500">Excellent</span>
+                  </div>
                 </div>
 
                 {/* Code Quality */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-3">
                     <Label className="text-sm font-medium">Code Quality & Best Practices</Label>
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm font-bold text-blue-600">{codeQuality}%</span>
-                      <span className="text-xs text-gray-500">
-                        {codeQuality < 50 ? 'Needs Work' : codeQuality < 80 ? 'Excellent' : 'Excellent'}
-                      </span>
-                    </div>
+                    <span className="text-sm font-bold text-blue-600">{codeQuality}%</span>
                   </div>
                   <input
                     type="range"
@@ -341,20 +319,19 @@ export function RecordProgressPageNew({
                     max="100"
                     value={codeQuality}
                     onChange={(e) => setCodeQuality(Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    className="w-full h-2 bg-blue-300 rounded-lg appearance-none cursor-pointer accent-blue-600"
                   />
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-gray-500">Needs Work</span>
+                    <span className="text-xs text-gray-500">Excellent</span>
+                  </div>
                 </div>
 
                 {/* Participation */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-3">
                     <Label className="text-sm font-medium">Class Participation & Engagement</Label>
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm font-bold text-blue-600">{participation}%</span>
-                      <span className="text-xs text-gray-500">
-                        {participation < 50 ? 'Needs Work' : participation < 80 ? 'Excellent' : 'Excellent'}
-                      </span>
-                    </div>
+                    <span className="text-sm font-bold text-blue-600">{participation}%</span>
                   </div>
                   <input
                     type="range"
@@ -362,8 +339,12 @@ export function RecordProgressPageNew({
                     max="100"
                     value={participation}
                     onChange={(e) => setParticipation(Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    className="w-full h-2 bg-blue-300 rounded-lg appearance-none cursor-pointer accent-blue-600"
                   />
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-gray-500">Needs Work</span>
+                    <span className="text-xs text-gray-500">Excellent</span>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -376,38 +357,43 @@ export function RecordProgressPageNew({
             <CardContent className="p-6">
               <h2 className="text-lg font-semibold mb-4">Overall Comprehension Level</h2>
               <div className="space-y-3">
-                {['Excellent', 'Good', 'Average', 'Needs Improvement'].map((rating) => (
+                {[
+                  { label: 'Excellent', range: '90-100%', color: 'bg-green-100 border-green-300', textColor: 'text-green-700' },
+                  { label: 'Good', range: '70-89%', color: 'bg-blue-100 border-blue-300', textColor: 'text-blue-700' },
+                  { label: 'Average', range: '50-69%', color: 'bg-amber-100 border-amber-300', textColor: 'text-amber-700' },
+                  { label: 'Needs Improvement', range: '<50%', color: 'bg-red-100 border-red-300', textColor: 'text-red-700' }
+                ].map((item) => (
                   <div
-                    key={rating}
+                    key={item.label}
                     className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      selectedRating === rating
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                      selectedRating === item.label
+                        ? `border-gray-400 ${item.color}`
+                        : 'border-gray-200 hover:border-gray-300 bg-white'
                     }`}
-                    onClick={() => setSelectedRating(rating)}
+                    onClick={() => setSelectedRating(item.label)}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          selectedRating === rating ? 'border-blue-500' : 'border-gray-300'
+                          selectedRating === item.label ? 'border-gray-700' : 'border-gray-300'
                         }`}
                       >
-                        {selectedRating === rating && (
-                          <div className="w-3 h-3 rounded-full bg-blue-500" />
+                        {selectedRating === item.label && (
+                          <div className="w-3 h-3 rounded-full bg-gray-700" />
                         )}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <span className="font-medium">{rating}</span>
-                          <Badge className={getRatingColor(rating)}>
-                            {getRatingLabel(rating)}
+                          <span className="font-medium">{item.label}</span>
+                          <Badge className={`${item.color} ${item.textColor}`}>
+                            {item.range}
                           </Badge>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          {rating === 'Excellent' && 'Mastered all concepts, can apply independently'}
-                          {rating === 'Good' && 'Understands most concepts, minor guidance needed'}
-                          {rating === 'Average' && 'Grasps basic concepts, needs regular practice'}
-                          {rating === 'Needs Improvement' && 'Struggling with concepts, requires additional support'}
+                          {item.label === 'Excellent' && 'Mastered all concepts, can apply independently'}
+                          {item.label === 'Good' && 'Understands most concepts, minor guidance needed'}
+                          {item.label === 'Average' && 'Grasps basic concepts, needs regular practice'}
+                          {item.label === 'Needs Improvement' && 'Struggling with concepts, requires additional support'}
                         </p>
                       </div>
                     </div>
@@ -461,7 +447,7 @@ export function RecordProgressPageNew({
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-3 pb-8">
           <Button variant="outline" onClick={() => setSelectedSession(null)}>
             Cancel
           </Button>
@@ -469,85 +455,159 @@ export function RecordProgressPageNew({
             💾 Save Progress
           </Button>
         </div>
+        </div>
       </div>
     );
   }
 
   // Show sessions list
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Record Session Progress</h1>
-          <p className="text-sm text-gray-500 mt-1">Document student performance and learning outcomes</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with Back Button */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+            <span>Students</span>
+            <span className="text-gray-400">&gt;</span>
+            <span className="text-gray-900 font-medium">Record Progress - {studentAccount?.username}</span>
+          </div>
+          <Button variant="ghost" onClick={onBack} className="text-blue-600 hover:bg-blue-50 px-0">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Students
+          </Button>
         </div>
-        <Button variant="outline" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Sessions
-        </Button>
       </div>
 
-      {/* Sessions List */}
-      {sessions.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <p className="text-gray-500">No completed sessions found for this student.</p>
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        {/* Student Info Card */}
+        <Card className="mb-8 bg-white">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 bg-pink-100 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl font-semibold text-pink-700">
+                    {studentAccount?.username.substring(0, 1).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-1">{studentAccount?.username || 'Student'}</h2>
+                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <span>ID: {studentAccount?.studentId || 'N/A'}</span>
+                    <span>•</span>
+                    <span>Computer Science</span>
+                    <span>•</span>
+                    <span>Year 3</span>
+                  </div>
+                </div>
+              </div>
+              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                Active Student
+              </Badge>
+            </div>
           </CardContent>
         </Card>
-      ) : (
-        <div className="space-y-3">
-          {sessions.map((session) => {
-            const hasProgress = mockProgressRecords.some(
-              p => p.sessionId === session.id && p.studentId === studentId
-            );
 
-            return (
-              <Card key={session.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-start gap-4 flex-1">
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <BookOpen className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-base mb-1">{session.topic}</h3>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>{session.date}</span>
+        {/* Completed Sessions Section */}
+        <div>
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-1">Completed Sessions</h3>
+            <p className="text-sm text-gray-600">Select a session to record or update progress</p>
+          </div>
+
+          {sessions.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-gray-500">No completed sessions found for this student.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {sessions.map((session, index) => {
+                const hasProgress = mockProgressRecords.some(
+                  p => p.sessionId === session.id && p.studentId === studentId
+                );
+
+                return (
+                  <Card 
+                    key={session.id} 
+                    className="bg-white hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-blue-500"
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-6">
+                        <div className="flex items-start gap-4 flex-1">
+                          <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                            <BookOpen className="h-5 w-5 text-yellow-700" />
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            <span>{session.time}</span>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-gray-900 mb-2">{session.topic}</h4>
+                            <div className="flex items-center gap-6 text-sm text-gray-600">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4 text-gray-400" />
+                                <span>{session.date}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-4 w-4 text-gray-400" />
+                                <span>{session.time}</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
+
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          {hasProgress ? (
+                            <>
+                              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                                ✓ Progress Recorded
+                              </Badge>
+                              <Button
+                                onClick={() => handleRecordClick(session)}
+                                variant="outline"
+                                className="text-gray-700 hover:bg-gray-50"
+                              >
+                                Edit
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">
+                                No Progress Yet
+                              </Badge>
+                              <Button
+                                onClick={() => handleRecordClick(session)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                              >
+                                Record
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    
-                    {hasProgress ? (
-                      <Button
-                        variant="outline"
-                        onClick={() => handleRecordClick(session)}
-                        className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                      >
-                        ✏️ Edit
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => handleRecordClick(session)}
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        📝 Record
-                      </Button>
-                    )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Upcoming Sessions Info */}
+          {sessions.length > 0 && (
+            <Card className="mt-8 bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-blue-900">
+                      <span className="font-semibold">Upcoming Sessions</span>
+                    </p>
+                    <p className="text-sm text-blue-700 mt-1">You can record progress after the session is completed.</p>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
