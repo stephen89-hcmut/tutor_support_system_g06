@@ -44,7 +44,7 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
   Tutor: [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'meetings', label: 'Meetings', icon: Video },
-    { id: 'students', label: 'My Students', icon: Users },
+    { id: 'students', label: 'Students', icon: Users },
     { id: 'feedback', label: 'Feedback', icon: MessageSquare },
     { id: 'library', label: 'Library', icon: BookOpen },
     { id: 'profile', label: 'Profile', icon: User },
@@ -134,26 +134,6 @@ export const AppLayout = memo(function AppLayout({ currentScreen, onNavigate, on
       <aside className="w-64 bg-white border-r border-border flex flex-col">
         <div className="p-6 border-b border-border">
           <h1 className="text-xl font-bold text-primary">HCMUT Tutor System</h1>
-          
-          {/* User Info Section */}
-          <div className="mt-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg flex-shrink-0">
-                {getInitials()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{getDisplayName()}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  {role && (
-                    <Badge className={cn('text-xs', getRoleColor())}>
-                      {role}
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">{getDisplayId()}</p>
-              </div>
-            </div>
-          </div>
         </div>
         
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -178,19 +158,38 @@ export const AppLayout = memo(function AppLayout({ currentScreen, onNavigate, on
           })}
         </nav>
 
-        {/* Logout Button - Always at bottom */}
-        {onLogout && (
-          <div className="p-4 border-t border-border mt-auto">
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={onLogout}
-            >
-              <LogOut className="mr-2 h-5 w-5" />
-              Sign Out
-            </Button>
+        {/* User Info and Logout - Always at bottom */}
+        <div className="mt-auto">
+          {/* User Info Section */}
+          <div className="p-4 border-t border-border">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg flex-shrink-0">
+                {getInitials()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">{getDisplayName()}</p>
+                {role && (
+                  <p className="text-xs text-muted-foreground mt-1">{role}</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-0.5">{getDisplayId()}</p>
+              </div>
+            </div>
           </div>
-        )}
+          
+          {/* Logout Button */}
+          {onLogout && (
+            <div className="px-4 pb-4">
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={onLogout}
+              >
+                <LogOut className="mr-2 h-5 w-5" />
+                Logout
+              </Button>
+            </div>
+          )}
+        </div>
       </aside>
 
       {/* Scrollable Main Content */}

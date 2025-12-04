@@ -7,7 +7,7 @@ import { Footer } from './components/Footer';
 import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
 import { Button } from './components/ui/button';
 import { StudentManagementScreen } from './screens/StudentManagementScreen';
-import { StudentDetailScreen } from './screens/StudentDetailScreen';
+import { StudentDetailScreen } from './screens/StudentDetailScreenNew';
 import { MeetingsScreen } from './screens/MeetingsScreen';
 import { MeetingManagementScreen } from './screens/MeetingManagementScreen';
 import { DocumentLibraryScreen } from './screens/DocumentLibraryScreen';
@@ -206,9 +206,6 @@ function App() {
           studentId={currentStudentId}
           onBack={handleBack}
           onRecordProgress={handleRecordProgress}
-          onViewProgress={handleViewProgress}
-          onViewAllFeedback={handleViewAllFeedback}
-          onExport={handleExport}
         />
       );
     }
@@ -217,7 +214,7 @@ function App() {
     if (currentScreen === 'students') {
       // For tutor: show their students with record progress capability
       if (role === 'Tutor') {
-        return <TutorStudentsScreen />;
+        return <TutorStudentsScreen onViewStudent={handleViewStudent} />;
       }
       // For manager: show all students management
       return (
