@@ -11,12 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CancelMeetingModal } from '@/components/CancelMeetingModal';
 import { RescheduleModal } from '@/components/RescheduleModal';
@@ -28,9 +22,7 @@ import {
   Calendar,
   Video,
   MapPin,
-  MoreVertical,
   X,
-  MessageSquare,
   LogIn,
 } from "lucide-react";
 import { useRole } from '@/contexts/RoleContext';

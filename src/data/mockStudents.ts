@@ -17,6 +17,7 @@ export const mockStudents: StudentProfile[] = [
       dateOfBirth: '2003-05-20',
       address: '123 Le Loi, Ho Chi Minh City',
       major: 'Computer Science',
+      department: 'School of Computer Science and Engineering',
       year: 3,
     },
     sessionHistory: [
@@ -72,6 +73,7 @@ export const mockStudents: StudentProfile[] = [
       dateOfBirth: '2004-08-15',
       address: '456 Nguyen Hue, Ho Chi Minh City',
       major: 'Software Engineering',
+      department: 'School of Computer Science and Engineering',
       year: 2,
     },
     sessionHistory: [
@@ -113,6 +115,7 @@ export const mockStudents: StudentProfile[] = [
       dateOfBirth: '2003-03-10',
       address: '789 Vo Van Tan, Ho Chi Minh City',
       major: 'Computer Science',
+      department: 'School of Computer Science and Engineering',
       year: 4,
     },
     sessionHistory: [
@@ -155,6 +158,7 @@ export const mockStudents: StudentProfile[] = [
       dateOfBirth: '2004-11-25',
       address: '321 Tran Hung Dao, Ho Chi Minh City',
       major: 'Information Systems',
+      department: 'School of Computer Science and Engineering',
       year: 2,
     },
     sessionHistory: [
@@ -196,6 +200,7 @@ export const mockStudents: StudentProfile[] = [
       dateOfBirth: '2003-07-30',
       address: '654 Pasteur, Ho Chi Minh City',
       major: 'Computer Engineering',
+      department: 'School of Electrical Engineering',
       year: 3,
     },
     sessionHistory: [

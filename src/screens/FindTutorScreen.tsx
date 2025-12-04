@@ -12,9 +12,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Search, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { TutorProfile } from '@/domain/entities/tutor';
+import type { Course } from '@/domain/entities/course';
 import { tutorService } from '@/application/services/tutorService';
+import { studentService } from '@/application/services/studentService';
+import { courseService } from '@/application/services/courseService';
 import { AITutorSuggestionScreen } from './AITutorSuggestionScreen';
 import { BookMeetingModal } from '@/components/BookMeetingModal';
+import { getSubjectsForDepartment } from '@/data/departmentSubjects';
+import { useRole } from '@/contexts/RoleContext';
 
 interface FindTutorScreenProps {
   onViewTutorProfile?: (tutorId: string) => void;
@@ -22,8 +27,9 @@ interface FindTutorScreenProps {
 }
 
 export function FindTutorScreen({ onViewTutorProfile, onBookingSuccess }: FindTutorScreenProps) {
+  const { role, userId } = useRole();
   const [searchQuery, setSearchQuery] = useState('');
-  const [department, setDepartment] = useState<string>('all');
+  const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [meetingMode, setMeetingMode] = useState<string>('all');
   const [gender, setGender] = useState<string>('all');
@@ -31,25 +37,32 @@ export function FindTutorScreen({ onViewTutorProfile, onBookingSuccess }: FindTu
   const [language, setLanguage] = useState<string>('all');
   const [showAISuggestion, setShowAISuggestion] = useState(false);
   const [tutors, setTutors] = useState<TutorProfile[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTutor, setSelectedTutor] = useState<TutorProfile | null>(null);
   const [showBookModal, setShowBookModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [studentDepartment, setStudentDepartment] = useState<string | null>(null);
+  const [departmentSubjects, setDepartmentSubjects] = useState<string[]>([]);
   const itemsPerPage = 9;
 
   useEffect(() => {
     let mounted = true;
-    const loadTutors = async () => {
+    const loadData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const data = await tutorService.list();
+        const [tutorData, courseData] = await Promise.all([
+          tutorService.list(),
+          courseService.getAll(),
+        ]);
         if (!mounted) return;
-        setTutors(data);
+        setTutors(tutorData);
+        setCourses(courseData);
       } catch (err) {
         if (!mounted) return;
-        setError('Không thể tải danh sách gia sư.');
+        setError('Không thể tải danh sách gia sư và khóa học.');
       } finally {
         if (mounted) {
           setLoading(false);
@@ -57,19 +70,50 @@ export function FindTutorScreen({ onViewTutorProfile, onBookingSuccess }: FindTu
       }
     };
 
-    loadTutors();
+    loadData();
     return () => {
       mounted = false;
     };
   }, []);
 
+  // Load student's department if role is Student
+  useEffect(() => {
+    if (role !== 'Student' || !userId) return;
+    
+    let mounted = true;
+    const loadStudentDepartment = async () => {
+      try {
+        const student = await studentService.getByAccountUserId(userId);
+        if (!mounted) return;
+        if (student && student.personalInfo.department) {
+          setStudentDepartment(student.personalInfo.department);
+          const subjects = getSubjectsForDepartment(student.personalInfo.department);
+          setDepartmentSubjects(subjects);
+        }
+      } catch (err) {
+        console.error('Failed to load student department:', err);
+      }
+    };
+
+    loadStudentDepartment();
+    return () => {
+      mounted = false;
+    };
+  }, [role, userId]);
+
   const allSkills = useMemo(() => {
+    // For students, show only their department's subjects
+    if (role === 'Student' && departmentSubjects.length > 0) {
+      return departmentSubjects;
+    }
+    
+    // For other roles, show all tutor skills
     const skillsSet = new Set<string>();
     tutors.forEach((tutor) => {
       tutor.skills.forEach(skill => skillsSet.add(skill));
     });
     return Array.from(skillsSet);
-  }, [tutors]);
+  }, [tutors, role, departmentSubjects]);
 
   const departments = useMemo(() => {
     const deptSet = new Set(tutors.map(t => t.department));
@@ -83,14 +127,16 @@ export function FindTutorScreen({ onViewTutorProfile, onBookingSuccess }: FindTu
       const query = searchQuery.toLowerCase();
       tutorList = tutorList.filter(
         tutor =>
-          tutor.name.toLowerCase().includes(query) ||
-          tutor.department.toLowerCase().includes(query) ||
-          tutor.skills.some(skill => skill.toLowerCase().includes(query))
+          tutor.name.toLowerCase().includes(query)
       );
     }
 
-    if (department !== 'all') {
-      tutorList = tutorList.filter(tutor => tutor.department === department);
+    // Filter by selected course
+    if (selectedCourse) {
+      const course = courses.find(c => c.courseId === selectedCourse);
+      if (course && course.tutorIds) {
+        tutorList = tutorList.filter(tutor => course.tutorIds?.includes(tutor.id));
+      }
     }
 
     if (selectedSkills.length > 0) {
@@ -126,7 +172,7 @@ export function FindTutorScreen({ onViewTutorProfile, onBookingSuccess }: FindTu
     }
 
     return tutorList;
-  }, [searchQuery, department, selectedSkills, meetingMode, gender, minRating, language, tutors]);
+  }, [searchQuery, selectedCourse, selectedSkills, meetingMode, gender, minRating, language, tutors, courses]);
 
   const toggleSkill = (skill: string) => {
     setSelectedSkills(prev =>
@@ -156,7 +202,6 @@ export function FindTutorScreen({ onViewTutorProfile, onBookingSuccess }: FindTu
       <AITutorSuggestionScreen
         onBack={() => setShowAISuggestion(false)}
         filters={{
-          department,
           skills: selectedSkills,
           meetingMode,
           gender,
@@ -190,7 +235,7 @@ export function FindTutorScreen({ onViewTutorProfile, onBookingSuccess }: FindTu
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search tutors by name, department, or skills..."
+                placeholder="Search tutors by name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -198,18 +243,18 @@ export function FindTutorScreen({ onViewTutorProfile, onBookingSuccess }: FindTu
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Department Filter */}
+              {/* Subject/Course Filter */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Department</label>
-                <Select value={department} onValueChange={setDepartment}>
+                <label className="text-sm font-medium">Subject</label>
+                <Select value={selectedCourse || 'all'} onValueChange={(value) => setSelectedCourse(value === 'all' ? '' : value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="All" />
+                    <SelectValue placeholder="Select a subject..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept} value={dept}>
-                        {dept}
+                    <SelectItem value="all">All Subjects</SelectItem>
+                    {[...courses].sort((a, b) => a.courseName.localeCompare(b.courseName)).map((course) => (
+                      <SelectItem key={course.courseId} value={course.courseId}>
+                        {course.courseName} ({course.courseCode})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -247,23 +292,6 @@ export function FindTutorScreen({ onViewTutorProfile, onBookingSuccess }: FindTu
                     <SelectItem value="3.0">3.0+ ★</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-
-            {/* Skills Filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Skills</label>
-              <div className="flex flex-wrap gap-2">
-                {allSkills.map((skill) => (
-                  <Badge
-                    key={skill}
-                    variant={selectedSkills.includes(skill) ? 'default' : 'outline'}
-                    className="cursor-pointer"
-                    onClick={() => toggleSkill(skill)}
-                  >
-                    {skill}
-                  </Badge>
-                ))}
               </div>
             </div>
 

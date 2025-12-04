@@ -39,6 +39,7 @@ export interface StudentProfile {
     dateOfBirth: string;
     address: string;
     major: string;
+    department: string;
     year: number;
   };
   sessionHistory: StudentSession[];
