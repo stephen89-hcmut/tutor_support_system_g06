@@ -4,13 +4,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Star, Calendar, Clock, FileText, TrendingUp, MessageCircle, Download } from 'lucide-react';
+import { Star, Calendar, Clock, FileText, TrendingUp, MessageCircle, Download } from 'lucide-react';
 import type { StudentProfile } from '@/domain/entities/student';
 import type { Meeting } from '@/domain/entities/meeting';
 import type { ProgressRecord } from '@/domain/entities/progress';
 import { studentService } from '@/application/services/studentService';
 import { meetingService } from '@/application/services/meetingService';
 import { progressService } from '@/application/services/progressService';
+import { mockStudentAccounts } from '@/data/mockUsers';
 import {
   LineChart,
   Line,
@@ -18,7 +19,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
+
   ResponsiveContainer,
 } from 'recharts';
 
@@ -41,13 +42,54 @@ export function StudentDetailScreen({
   useEffect(() => {
     const loadData = async () => {
       try {
+        console.log('Loading student detail for:', studentId);
         const [studentData, studentMeetings, progress] = await Promise.all([
-          studentService.getById(studentId),
+          studentService.getByAccountUserId(studentId),
           meetingService.getByStudent(studentId),
           progressService.getListProgressById(studentId),
         ]);
         
-        setStudent(studentData ?? null);
+        console.log('Student data loaded:', studentData);
+        console.log('Meetings loaded:', studentMeetings.length);
+        console.log('Progress records loaded:', progress.length);
+        
+        // If student not found in mockStudents, create profile from account
+        let finalStudent = studentData;
+        if (!finalStudent) {
+          const account = mockStudentAccounts.find(acc => acc.userId === studentId);
+          if (account) {
+            console.log('Creating dynamic profile for account:', account.username);
+            const currentYear = new Date().getFullYear();
+            const yearsSinceEnrollment = currentYear - account.enrollmentYear;
+            const currentYearLevel = Math.min(yearsSinceEnrollment + 1, 4);
+            
+            finalStudent = {
+              id: account.userId,
+              name: account.username.replace('sv.', '').split(/(?=[A-Z])/).join(' '),
+              studentId: account.studentId,
+              progress: 75,
+              status: 'Active' as const,
+              rating: 4.0,
+              email: account.email,
+              phone: '+84 ' + Math.floor(Math.random() * 900000000 + 100000000),
+              joinDate: account.createdAt.split('T')[0],
+              lastSession: studentMeetings.length > 0 ? studentMeetings[0].date : undefined,
+              totalSessions: studentMeetings.length,
+              personalInfo: {
+                dateOfBirth: `${account.enrollmentYear - 18}-01-01`,
+                address: 'Ho Chi Minh City',
+                major: account.majors,
+                department: 'School of Computer Science and Engineering',
+                year: currentYearLevel,
+              },
+              sessionHistory: [],
+              progressData: [],
+              feedback: [],
+            };
+          }
+        }
+        
+        setStudent(finalStudent ?? null);
         setMeetings(studentMeetings);
         setProgressRecords(progress);
       } catch (error) {
@@ -65,7 +107,7 @@ export function StudentDetailScreen({
   }
 
   const completedMeetings = meetings.filter(m => m.status === 'Completed');
-  const upcomingMeetings = meetings.filter(m => m.status === 'Scheduled' || m.status === 'Confirmed');
+  const upcomingMeetings = meetings.filter(m => m.status === 'In Progress');
   const cancelledMeetings = meetings.filter(m => m.status === 'Cancelled');
 
   // Calculate average rating
@@ -90,7 +132,7 @@ export function StudentDetailScreen({
   // Progress trend data
   const progressTrend = progressRecords
     .slice(-4)
-    .map((record, index) => ({
+    .map((record) => ({
       month: new Date(record.sessionDate).toLocaleDateString('en-US', { month: 'short' }),
       progress: Math.round((record.understanding + record.problemSolving + record.codeQuality + record.participation) / 4),
     }));
@@ -129,7 +171,7 @@ export function StudentDetailScreen({
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4" />
-                    <span>{student.personalInfo?.phone || '+84 123 456 789'}</span>
+                    <span>{student.phone || '+84 123 456 789'}</span>
                   </div>
                 </div>
               </div>
@@ -224,7 +266,7 @@ export function StudentDetailScreen({
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">Phone Number</div>
-                  <div className="font-medium">{student.personalInfo?.phone || '+84 123 456 789'}</div>
+                  <div className="font-medium">{student.phone || '+84 123 456 789'}</div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">Department</div>

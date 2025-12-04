@@ -20,6 +20,7 @@ import { AIFeedbackAnalysisScreen } from './screens/AIFeedbackAnalysisScreen';
 import { FeedbackScreen } from './screens/FeedbackScreen';
 import { MyProgressScreen } from './screens/MyProgressScreen';
 import { RecordProgressScreen } from './screens/RecordProgressScreen';
+import { RecordProgressScreenNew } from './screens/RecordProgressScreenNew';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { FindTutorScreen } from './screens/FindTutorScreen';
@@ -156,9 +157,12 @@ function App() {
   };
 
   const handleRecordProgress = (studentId: string) => {
+    console.log('handleRecordProgress called with studentId:', studentId);
+    console.log('Current screen:', currentScreen);
     setRecordProgressStudentId(studentId);
     setPreviousScreen(currentScreen);
     setShowRecordProgress(true);
+    console.log('showRecordProgress set to true');
   };
 
   const handleRecordProgressSave = () => {
@@ -199,6 +203,21 @@ function App() {
   };
 
   const renderScreenContent = () => {
+    // Handle record progress screen - must check FIRST before other screens
+    if (showRecordProgress && recordProgressStudentId) {
+      console.log('Rendering RecordProgressScreen for student:', recordProgressStudentId);
+      return (
+        <RecordProgressScreenNew
+          studentId={recordProgressStudentId}
+          onBack={() => {
+            setShowRecordProgress(false);
+            setRecordProgressStudentId(null);
+            setCurrentScreen(previousScreen);
+          }}
+        />
+      );
+    }
+
     // Handle student detail screen
     if (currentScreen === 'studentDetail' && currentStudentId) {
       return (
@@ -308,21 +327,6 @@ function App() {
     // Handle my progress screen
     if (currentScreen === 'my-progress') {
       return <MyProgressScreen />;
-    }
-
-    // Handle record progress screen
-    if (showRecordProgress && recordProgressStudentId) {
-      return (
-        <RecordProgressScreen
-          studentId={recordProgressStudentId}
-          onBack={() => {
-            setShowRecordProgress(false);
-            setRecordProgressStudentId(null);
-            setCurrentScreen(previousScreen);
-          }}
-          onSave={handleRecordProgressSave}
-        />
-      );
     }
 
     // Handle settings screen (not available for Manager)
