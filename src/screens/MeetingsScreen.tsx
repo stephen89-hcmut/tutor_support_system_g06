@@ -20,12 +20,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CancelMeetingModal } from '@/components/CancelMeetingModal';
 import { RescheduleModal } from '@/components/RescheduleModal';
-import { FeedbackModal } from '@/components/FeedbackModal';
 import { MeetingDetailModal } from "@/components/MeetingDetailModal";
 import { PaginationEnhanced } from '@/components/ui/pagination-enhanced';
 import type { Meeting, MeetingStatus } from '@/domain/entities/meeting';
 import { meetingService } from '@/application/services/meetingService';
-import { meetingFeedbackService } from '@/application/services/meetingFeedbackService';
 import {
   Calendar,
   Video,
@@ -48,12 +46,9 @@ export function MeetingsScreen({
 }: MeetingsScreenProps) {
   const { role, userId } = useRole();
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+  const [rescheduleMeeting, setRescheduleMeeting] = useState<Meeting | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [rescheduleMeeting, setRescheduleMeeting] = useState<Meeting | null>(
-    null
-  );
-  const [feedbackMeeting, setFeedbackMeeting] = useState<Meeting | null>(null);
   const [activeTab, setActiveTab] = useState<MeetingStatus>("Scheduled");
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(true);
@@ -209,36 +204,6 @@ export function MeetingsScreen({
       )
     );
     setRescheduleMeeting(null);
-  };
-
-  const handleFeedbackClick = (meeting: Meeting) => {
-    // Only students can submit feedback
-    if (role !== "Student") {
-      alert("Chỉ sinh viên có thể gửi đánh giá.");
-      return;
-    }
-    // Only the student of the meeting can feedback
-    if (userId && meeting.studentId !== userId) {
-      alert("Bạn không có quyền đánh giá buổi học này.");
-      return;
-    }
-    setFeedbackMeeting(meeting);
-  };
-
-  const handleFeedbackSubmit = async (
-    meetingId: string,
-    rating: number,
-    comment: string,
-    suggestedTopics?: string
-  ) => {
-    await meetingFeedbackService.submitFeedback({
-      meetingId,
-      studentId: userId || "",
-      tutorId: feedbackMeeting?.tutorId || "",
-      rating,
-      comment,
-      suggestedTopics,
-    });
   };
 
   const handleCancelComplete = (
@@ -611,24 +576,6 @@ export function MeetingsScreen({
                                       </div>
                                     </TableCell>
                                   )}
-                                  {status === "Completed" &&
-                                    role === "Student" && (
-                                      <TableCell
-                                        className="text-right"
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() =>
-                                            handleFeedbackClick(meeting)
-                                          }
-                                        >
-                                          <MessageSquare className="mr-2 h-4 w-4" />
-                                          Feedback
-                                        </Button>
-                                      </TableCell>
-                                    )}
                                 </TableRow>
                               );
                             })}
@@ -674,13 +621,6 @@ export function MeetingsScreen({
         isOpen={showRescheduleModal}
         onClose={() => setRescheduleMeeting(null)}
         onReschedule={handleRescheduleComplete}
-      />
-
-      <FeedbackModal
-        meeting={feedbackMeeting}
-        isOpen={!!feedbackMeeting}
-        onClose={() => setFeedbackMeeting(null)}
-        onSubmit={handleFeedbackSubmit}
       />
 
       <MeetingDetailModal
