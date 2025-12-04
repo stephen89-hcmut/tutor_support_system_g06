@@ -42,7 +42,11 @@ interface StudentWithProgress {
   department?: string;
 }
 
-export function TutorStudentsScreen() {
+interface TutorStudentsScreenProps {
+  onViewStudent?: (studentId: string) => void;
+}
+
+export function TutorStudentsScreen({ onViewStudent }: TutorStudentsScreenProps = {}) {
   console.log('TutorStudentsScreen rendering');
   const { userId } = useRole();
   const { toast } = useToast();
@@ -410,7 +414,11 @@ export function TutorStudentsScreen() {
               : 0;
             
             return (
-              <Card key={student.studentId} className="hover:shadow-md transition-shadow">
+              <Card 
+                key={student.studentId} 
+                className="hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => onViewStudent?.(student.studentId)}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4 justify-between">
                     {/* Left: Avatar and Info */}
@@ -472,7 +480,7 @@ export function TutorStudentsScreen() {
                       {/* Action Menu */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="ghost">
+                          <Button size="sm" variant="ghost" onClick={(e) => e.stopPropagation()}>
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>

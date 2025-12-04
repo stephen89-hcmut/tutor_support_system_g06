@@ -18,7 +18,53 @@ function getTutorName(username: string): string {
   return `Dr. ${username.charAt(0).toUpperCase() + username.slice(1)}`;
 }
 
-// Topics for meetings
+// Topics by subject for proper categorization
+const topicsBySubject: Record<string, string[]> = {
+  'Data Structures': [
+    'Arrays and Linked Lists',
+    'Stacks and Queues',
+    'Binary Trees',
+    'Hash Tables',
+    'Graphs - BFS and DFS',
+  ],
+  'Algorithms': [
+    'Sorting Algorithms',
+    'Search Algorithms',
+    'Dynamic Programming',
+    'Greedy Algorithms',
+    'Graph Algorithms',
+  ],
+  'Database Design': [
+    'SQL Queries',
+    'Database Normalization',
+    'Indexing',
+    'Transactions',
+    'NoSQL Databases',
+  ],
+  'Web Development': [
+    'HTML/CSS Basics',
+    'JavaScript Fundamentals',
+    'React Components',
+    'Node.js Backend',
+    'RESTful APIs',
+  ],
+  'Machine Learning': [
+    'Linear Regression',
+    'Classification',
+    'Neural Networks',
+    'Deep Learning',
+    'Data Preprocessing',
+  ],
+  'Software Engineering': [
+    'Design Patterns',
+    'Object-Oriented Design',
+    'Software Testing',
+    'Version Control',
+    'Agile Methodology',
+  ],
+};
+
+// Topics for meetings (legacy - kept for compatibility)
 const topics = [
   'Data Structures - Binary Trees',
   'Algorithms - Sorting',
@@ -129,4 +175,62 @@ for (let i = 0; i < meetingCounts.scheduled; i++) {
 // Generate cancelled meetings
 for (let i = 0; i < meetingCounts.cancelled; i++) {
   mockMeetings.push(createMeeting('Cancelled'));
+}
+
+// Add 16 specific completed meetings for student s1 (nguyenvana) across 6 subjects
+// This ensures progress data has matching meetings
+const s1StudentAccount = mockStudentAccounts.find(acc => acc.userId === 's1');
+const selectedTutorsForS1 = [
+  mockTutorAccounts[0],
+  mockTutorAccounts[1],
+  mockTutorAccounts[2],
+  mockTutorAccounts[3],
+];
+
+const subjectsForS1 = ['Data Structures', 'Algorithms', 'Database Design', 'Web Development', 'Machine Learning', 'Software Engineering'];
+const startDate = new Date('2024-08-01');
+let meetingIdS1 = 1;
+
+if (s1StudentAccount) {
+  // Generate exactly 16 completed meetings for student s1
+  for (let i = 0; i < 16; i++) {
+    const subject = subjectsForS1[i % 6];
+    const topicsList = topicsBySubject[subject];
+    
+    // Ensure we have topics
+    if (!topicsList || topicsList.length === 0) continue;
+    
+    const topic = topicsList[Math.floor(i / 6) % topicsList.length]; // Better distribution across topics
+    const tutor = selectedTutorsForS1[i % selectedTutorsForS1.length];
+    
+    const meetingDate = new Date(startDate);
+    meetingDate.setDate(meetingDate.getDate() + i * 5); // Space meetings 5 days apart
+    
+    const dateStr = meetingDate.toISOString().split('T')[0];
+    const times = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+    const time = times[i % times.length];
+    const mode = ['Zoom', 'Teams', 'In-Person'][i % 3] as 'Zoom' | 'Teams' | 'In-Person';
+    
+    meetingId++;
+    
+    mockMeetings.push({
+      id: `m-s1-${meetingIdS1}`, // m-s1-1, m-s1-2, ..., m-s1-16
+      date: dateStr,
+      time,
+      studentId: s1StudentAccount.userId,
+      studentName: getStudentName(s1StudentAccount.username),
+      tutorId: tutor.userId,
+      tutorName: getTutorName(tutor.username),
+      topic: `${subject} - ${topic}`,
+      mode,
+      status: 'Completed' as const,
+      link: mode !== 'In-Person' ? `https://meet.google.com/${Math.random().toString(36).substring(7)}` : undefined,
+      location: mode === 'In-Person' ? 'HCMUT Campus - Room A3.201' : undefined,
+      notes: 'Session completed successfully.',
+    });
+    
+    meetingIdS1++;
+  }
+  
+  console.log(`Generated ${meetingIdS1 - 1} completed meetings for student s1`);
 }
