@@ -51,8 +51,8 @@ const translations: Record<Language, Record<string, string>> = {
     'common.search': 'Tìm kiếm',
   },
   en: {
-    'header.university': 'NATIONAL UNIVERSITY OF HO CHI MINH CITY',
-    'header.school': 'BACH KHOA UNIVERSITY',
+    'header.university': 'VIET NAM NATIONAL UNIVERSITY HO CHI MINH CITY',
+    'header.school': 'HO CHI MINH CITY UNIVERSITY OF TECHNOLOGY',
     'footer.copyright': 'Copyright © 2025 - Bach Khoa University HCMC',
     'footer.course': 'Software Engineering L06',
     'nav.dashboard': 'Dashboard',
