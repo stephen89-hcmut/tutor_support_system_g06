@@ -1,6 +1,6 @@
 import type { Feedback } from '@/domain/entities/feedback';
 import { FeedbackVisibility } from '@/domain/enums';
-import { mockFeedbackRepository } from '@/infrastructure/mockApi/repositories/feedbackRepository';
+import { mockFeedbackRepository } from '@/infrastructure/repositories/feedbackRepository';
 import { notificationManager } from '@/services/NotificationSystem';
 
 interface CreateFeedbackParams {

@@ -1,5 +1,5 @@
 import type { DashboardSummaryDto } from '@/domain/dtos';
-import { mockMeetingRepository } from '@/infrastructure/mockApi/repositories/meetingRepository';
+import { mockMeetingRepository } from '@/infrastructure/repositories/meetingRepository';
 import { notificationService } from './notificationService';
 import { progressService } from './progressService';
 

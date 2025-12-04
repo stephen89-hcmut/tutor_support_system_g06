@@ -1,7 +1,7 @@
 import type { Course } from '@/domain/entities/course';
 import type { Document } from '@/domain/entities/document';
-import { mockCourseRepository } from '@/infrastructure/mockApi/repositories/courseRepository';
-import { mockDocumentRepository } from '@/infrastructure/mockApi/repositories/documentRepository';
+import { mockCourseRepository } from '@/infrastructure/repositories/courseRepository';
+import { mockDocumentRepository } from '@/infrastructure/repositories/documentRepository';
 import { mockCourses } from '@/data/mockCourses';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

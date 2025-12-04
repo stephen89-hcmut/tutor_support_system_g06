@@ -1,6 +1,6 @@
 import type { DateRange } from '@/domain/dtos';
 import type { FeedbackAnalysisResult } from '@/domain/entities/feedbackAnalysis';
-import { mockFeedbackAnalysisRepository } from '@/infrastructure/mockApi/repositories/feedbackAnalysisRepository';
+import { mockFeedbackAnalysisRepository } from '@/infrastructure/repositories/feedbackAnalysisRepository';
 
 class FeedbackAnalysisService {
   async analyzeFeedbackForTutor(tutorId: string, timeRange: DateRange): Promise<FeedbackAnalysisResult> {

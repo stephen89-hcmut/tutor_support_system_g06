@@ -1,6 +1,6 @@
 import type { Role } from '@/domain/entities/user';
 import type { UserProfile } from '@/domain/entities/profile';
-import { mockProfileRepository } from '@/infrastructure/mockApi/repositories/profileRepository';
+import { mockProfileRepository } from '@/infrastructure/repositories/profileRepository';
 
 class ProfileService {
   async getProfileByRole(role: Role): Promise<UserProfile> {

@@ -1,6 +1,6 @@
 import type { Notification } from '@/domain/entities/notification';
 import { NotificationType } from '@/domain/enums';
-import { mockNotificationRepository } from '@/infrastructure/mockApi/repositories/notificationRepository';
+import { mockNotificationRepository } from '@/infrastructure/repositories/notificationRepository';
 
 class NotificationService {
   async sendNotification(toUserId: string, message: string, type: NotificationType, link?: string): Promise<string> {

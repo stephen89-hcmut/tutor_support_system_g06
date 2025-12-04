@@ -1,6 +1,6 @@
 import type { TutorSuggestion } from '@/domain/entities/tutorSuggestion';
 import type { AISuggestionCriteriaDto } from '@/domain/dtos';
-import { mockTutorSuggestionRepository } from '@/infrastructure/mockApi/repositories/tutorSuggestionRepository';
+import { mockTutorSuggestionRepository } from '@/infrastructure/repositories/tutorSuggestionRepository';
 import { tutorService } from './tutorService';
 import { progressService } from './progressService';
 import { SuggestionSource, SuggestionStatus } from '@/domain/enums';

@@ -1,4 +1,4 @@
-import { meetings, feedbacks, progressRecords, users } from '../mockData/db';
+import { meetings, feedbacks, progressRecords, users } from '../data/db';
 import { ProgressRecord, CreateProgressPayload } from '../interfaces';
 
 export const tutorImpl = {

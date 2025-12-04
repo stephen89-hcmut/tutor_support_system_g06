@@ -1,4 +1,4 @@
-import { users, feedbacks } from '../mockData/db';
+import { users, feedbacks } from '../data/db';
 import { User, CreateFeedbackPayload } from '../interfaces';
 
 export const studentImpl = {

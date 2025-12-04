@@ -1,5 +1,5 @@
 import type { Meeting } from '@/domain/entities/meeting';
-import { mockMeetingRepository } from '@/infrastructure/mockApi/repositories/meetingRepository';
+import { mockMeetingRepository } from '@/infrastructure/repositories/meetingRepository';
 
 class MeetingService {
   async getAll(): Promise<Meeting[]> {

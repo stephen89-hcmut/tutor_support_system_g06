@@ -1,5 +1,5 @@
 import { ManagerAccount, StudentAccount, TutorAccount, UserEntity } from '@/domain/entities/user';
-import { hashPassword } from '@/infrastructure/mockApi/utils/hashPassword';
+import { hashPassword } from '@/infrastructure/utils/hashPassword';
 
 // Vietnamese first names
 const firstNames = [

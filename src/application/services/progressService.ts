@@ -1,7 +1,7 @@
 import type { ProgressRecord } from '@/domain/entities/progress';
 import type { ProgressUpdateDto } from '@/domain/dtos';
 import { calculateAverageMetrics, calculateOverallPerformance, getProgressTrend } from '@/domain/services/progressMetrics';
-import { mockProgressRepository } from '@/infrastructure/mockApi/repositories/progressRepository';
+import { mockProgressRepository } from '@/infrastructure/repositories/progressRepository';
 
 class ProgressService {
   async getAll(): Promise<ProgressRecord[]> {

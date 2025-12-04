@@ -1,31 +1,31 @@
 import { useState, useEffect } from 'react';
 import { AppLayout } from './components/AppLayout';
 import { useRole } from './contexts/RoleContext';
-import { LoginScreen } from './screens/LoginScreen';
+import { LoginPage } from './pages/LoginPage';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
 import { Button } from './components/ui/button';
-import { StudentManagementScreen } from './screens/StudentManagementScreen';
-import { StudentDetailScreen } from './screens/StudentDetailScreenNew';
-import { MeetingsScreen } from './screens/MeetingsScreen';
-import { MeetingManagementScreen } from './screens/MeetingManagementScreen';
-import { DocumentLibraryScreen } from './screens/DocumentLibraryScreen';
-import { TutorProfileScreen } from './screens/TutorProfileScreen';
-import { ProfileScreen } from './screens/ProfileScreen';
-import { PermissionsManagementScreen } from './screens/PermissionsManagementScreen';
-import { DataSyncScreen } from './screens/DataSyncScreen';
-import { ReportsScreen } from './screens/ReportsScreen';
-import { AIFeedbackAnalysisScreen } from './screens/AIFeedbackAnalysisScreen';
-import { FeedbackScreen } from './screens/FeedbackScreen';
-import { MyProgressScreen } from './screens/MyProgressScreen';
-import { RecordProgressScreen } from './screens/RecordProgressScreen';
-import { RecordProgressScreenNew } from './screens/RecordProgressScreenNew';
-import { DashboardScreen } from './screens/DashboardScreen';
-import { SettingsScreen } from './screens/SettingsScreen';
-import { FindTutorScreen } from './screens/FindTutorScreen';
-import { StudentAnalyticsScreen } from './screens/StudentAnalyticsScreen';
-import { TutorStudentsScreen } from './screens/TutorStudentsScreen';
+import { StudentManagementPage } from './pages/StudentManagementPage';
+import { StudentDetailPage } from './pages/StudentDetailPageNew';
+import { MeetingsPage } from './pages/MeetingsPage';
+import { MeetingManagementPage } from './pages/MeetingManagementPage';
+import { DocumentLibraryPage } from './pages/DocumentLibraryPage';
+import { TutorProfilePage } from './pages/TutorProfilePage';
+import { ProfilePage } from './pages/ProfilePage';
+import { PermissionsManagementPage } from './pages/PermissionsManagementPage';
+import { DataSyncPage } from './pages/DataSyncPage';
+import { ReportsPage } from './pages/ReportsPage';
+import { AIFeedbackAnalysisPage } from './pages/AIFeedbackAnalysisPage';
+import { FeedbackPage } from './pages/FeedbackPage';
+import { MyProgressPage } from './pages/MyProgressPage';
+import { RecordProgressPage } from './pages/RecordProgressPage';
+import { RecordProgressPageNew } from './pages/RecordProgressPageNew';
+import { DashboardPage } from './pages/DashboardPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { FindTutorPage } from './pages/FindTutorPage';
+import { StudentAnalyticsPage } from './pages/StudentAnalyticsPage';
+import { TutorStudentsPage } from './pages/TutorStudentsPage';
 import type { UserEntity } from '@/domain/entities/user';
 import { meetingService } from '@/application/services/meetingService';
 import { useToast } from './components/ui/use-toast';
@@ -105,7 +105,7 @@ function App() {
 
   // Show login screen if not authenticated
   if (!isAuthenticated) {
-    return <LoginScreen onLogin={handleLogin} />;
+    return <LoginPage onLogin={handleLogin} />
   }
 
   const handleNavigate = (page: string) => {
@@ -207,7 +207,7 @@ function App() {
     if (showRecordProgress && recordProgressStudentId) {
       console.log('Rendering RecordProgressScreen for student:', recordProgressStudentId);
       return (
-        <RecordProgressScreenNew
+        <RecordProgressPageNew
           studentId={recordProgressStudentId}
           onBack={() => {
             setShowRecordProgress(false);
@@ -221,7 +221,7 @@ function App() {
     // Handle student detail screen
     if (currentScreen === 'studentDetail' && currentStudentId) {
       return (
-        <StudentDetailScreen
+        <StudentDetailPage
           studentId={currentStudentId}
           onBack={handleBack}
           onRecordProgress={handleRecordProgress}
@@ -233,11 +233,11 @@ function App() {
     if (currentScreen === 'students') {
       // For tutor: show their students with record progress capability
       if (role === 'Tutor') {
-        return <TutorStudentsScreen onViewStudent={handleViewStudent} />;
+        return <TutorStudentsPage onViewStudent={handleViewStudent} />;
       }
       // For manager: show all students management
       return (
-        <StudentManagementScreen
+        <StudentManagementPage
           onViewStudent={handleViewStudent}
           onViewProgress={handleViewProgress}
           onViewFeedback={handleViewFeedback}
@@ -249,7 +249,7 @@ function App() {
     // Handle meetings screen
     if (currentScreen === 'meetings') {
       return (
-        <MeetingsScreen
+        <MeetingsPage
           onCancel={handleCancelMeeting}
           onBookNewMeeting={() => setCurrentScreen('book-meeting')}
         />
@@ -258,7 +258,7 @@ function App() {
 
     // Handle library screen
     if (currentScreen === 'library') {
-      return <DocumentLibraryScreen />;
+      return <DocumentLibraryPage />;
     }
 
     // Handle find tutor / book meeting screen (Student only - UCB1.1)
@@ -279,7 +279,7 @@ function App() {
         );
       }
       return (
-        <FindTutorScreen
+        <FindTutorPage
           onViewTutorProfile={(tutorId) => {
             setCurrentStudentId(tutorId); // Reuse for tutor ID
             setPreviousScreen(currentScreen);
@@ -296,7 +296,7 @@ function App() {
     // Handle tutor profile screen
     if (currentScreen === 'tutorProfile' && currentStudentId) {
       return (
-        <TutorProfileScreen
+        <TutorProfilePage
           tutorId={currentStudentId}
           onBack={() => {
             setCurrentScreen(previousScreen);
@@ -309,7 +309,7 @@ function App() {
     // Handle AI Feedback Analysis screen
     if (showAIFeedbackAnalysis) {
       return (
-        <AIFeedbackAnalysisScreen
+        <AIFeedbackAnalysisPage
           onBack={() => setShowAIFeedbackAnalysis(false)}
         />
       );
@@ -318,7 +318,7 @@ function App() {
     // Handle feedback screen
     if (currentScreen === 'feedback') {
       return (
-        <FeedbackScreen
+        <FeedbackPage
           onAIAnalysis={() => setShowAIFeedbackAnalysis(true)}
         />
       );
@@ -326,26 +326,26 @@ function App() {
 
     // Handle my progress screen
     if (currentScreen === 'my-progress') {
-      return <MyProgressScreen />;
+      return <MyProgressPage />;
     }
 
     // Handle settings screen (not available for Manager)
     if (currentScreen === 'settings') {
       if (role === 'Manager') {
         setCurrentScreen('dashboard');
-        return <DashboardScreen onNavigate={handleNavigate} />;
+        return <DashboardPage onNavigate={handleNavigate} />;
       }
-      return <SettingsScreen />;
+      return <SettingsPage />;
     }
 
     // Handle profile screen (not available for Manager)
     if (currentScreen === 'profile') {
       if (role === 'Manager') {
         setCurrentScreen('dashboard');
-        return <DashboardScreen onNavigate={handleNavigate} />;
+        return <DashboardPage onNavigate={handleNavigate} />;
       }
       return (
-        <ProfileScreen
+        <ProfilePage
           onBack={() => setCurrentScreen('dashboard')}
         />
       );
@@ -353,13 +353,13 @@ function App() {
 
     // Handle dashboard screen
     if (currentScreen === 'dashboard') {
-      return <DashboardScreen onNavigate={handleNavigate} />;
+      return <DashboardPage onNavigate={handleNavigate} />;
     }
 
     // Handle analytics screen
     if (currentScreen === 'analytics') {
       return (
-        <StudentAnalyticsScreen
+        <StudentAnalyticsPage
           onBack={() => setCurrentScreen('dashboard')}
         />
       );
@@ -369,10 +369,10 @@ function App() {
     if (currentScreen === 'permissions') {
       if (role !== 'Manager') {
         setCurrentScreen('dashboard');
-        return <DashboardScreen onNavigate={handleNavigate} />;
+        return <DashboardPage onNavigate={handleNavigate} />;
       }
       return (
-        <PermissionsManagementScreen
+        <PermissionsManagementPage
           onBack={() => setCurrentScreen('dashboard')}
         />
       );
@@ -382,10 +382,10 @@ function App() {
     if (currentScreen === 'data-sync') {
       if (role !== 'Manager') {
         setCurrentScreen('dashboard');
-        return <DashboardScreen onNavigate={handleNavigate} />;
+        return <DashboardPage onNavigate={handleNavigate} />;
       }
       return (
-        <DataSyncScreen
+        <DataSyncPage
           onBack={() => setCurrentScreen('dashboard')}
         />
       );
@@ -394,10 +394,10 @@ function App() {
     if (currentScreen === 'reports') {
       if (role !== 'Manager') {
         setCurrentScreen('dashboard');
-        return <DashboardScreen onNavigate={handleNavigate} />;
+        return <DashboardPage onNavigate={handleNavigate} />;
       }
       return (
-        <ReportsScreen
+        <ReportsPage
           onBack={() => setCurrentScreen('dashboard')}
         />
       );
@@ -407,10 +407,10 @@ function App() {
     if (currentScreen === 'manage-meetings') {
       if (role !== 'Manager') {
         setCurrentScreen('dashboard');
-        return <DashboardScreen onNavigate={handleNavigate} />;
+        return <DashboardPage onNavigate={handleNavigate} />;
       }
       return (
-        <MeetingManagementScreen
+        <MeetingManagementPage
           onBack={() => setCurrentScreen('dashboard')}
         />
       );

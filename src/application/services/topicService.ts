@@ -1,7 +1,7 @@
 import type { Topic } from '@/domain/entities/topic';
 import type { Document } from '@/domain/entities/document';
-import { mockTopicRepository } from '@/infrastructure/mockApi/repositories/topicRepository';
-import { mockDocumentRepository } from '@/infrastructure/mockApi/repositories/documentRepository';
+import { mockTopicRepository } from '@/infrastructure/repositories/topicRepository';
+import { mockDocumentRepository } from '@/infrastructure/repositories/documentRepository';
 
 class TopicService {
   async createTopic(topic: Topic): Promise<string> {

@@ -1,4 +1,4 @@
-import { meetings, users } from '../mockData/db';
+import { meetings, users } from '../data/db';
 import { Meeting, CreateMeetingPayload, UpdateMeetingPayload } from '../interfaces';
 
 export const meetingImpl = {

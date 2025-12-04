@@ -1,5 +1,5 @@
 import type { UserEntity } from '@/domain/entities/user';
-import { mockUserRepository } from '@/infrastructure/mockApi/repositories/userRepository';
+import { mockUserRepository } from '@/infrastructure/repositories/userRepository';
 
 class AuthService {
   async login(username: string, password: string): Promise<UserEntity | null> {

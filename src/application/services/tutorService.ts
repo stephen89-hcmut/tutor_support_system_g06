@@ -1,5 +1,5 @@
 import type { TutorProfile } from '@/domain/entities/tutor';
-import { mockTutorRepository } from '@/infrastructure/mockApi/repositories/tutorRepository';
+import { mockTutorRepository } from '@/infrastructure/repositories/tutorRepository';
 
 class TutorService {
   async list(): Promise<TutorProfile[]> {
