@@ -453,11 +453,6 @@ export function MeetingsScreen({
                                   Actions
                                 </TableHead>
                               )}
-                              {status === "Completed" && role === "Student" && (
-                                <TableHead className="text-right">
-                                  Actions
-                                </TableHead>
-                              )}
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -550,29 +545,6 @@ export function MeetingsScreen({
                                           <X className="mr-2 h-4 w-4" />
                                           Cancel
                                         </Button>
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon">
-                                              <MoreVertical className="h-4 w-4" />
-                                            </Button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end">
-                                            <DropdownMenuItem
-                                              onClick={() =>
-                                                handleRescheduleClick(meeting)
-                                              }
-                                            >
-                                              Reschedule
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                              onClick={() =>
-                                                handleCancelClick(meeting)
-                                              }
-                                            >
-                                              Cancel
-                                            </DropdownMenuItem>
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
                                       </div>
                                     </TableCell>
                                   )}
