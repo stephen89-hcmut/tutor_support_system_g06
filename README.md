@@ -45,6 +45,53 @@ Các thư viện quan trọng khác được mô tả chi tiết trong `package.
 
 ---
 
+## 2.1 Danh sách chi tiết thư viện & framework
+
+### Core Framework & Build Tools
+- **React 18** - Thư viện UI tuyên bố
+- **TypeScript** - Đảm bảo type safety
+- **Vite 5** - Build tool hiệu năng cao & dev server
+- **TailwindCSS** - CSS framework utility-first
+- **PostCSS** - Xử lý CSS
+
+### UI Component Libraries
+- **Radix UI** - Headless UI primitives (không có styling mặc định, dễ tùy chỉnh)
+  - `@radix-ui/react-checkbox` - Checkbox component
+  - `@radix-ui/react-dialog` - Modal/Dialog
+  - `@radix-ui/react-dropdown-menu` - Menu thả xuống
+  - `@radix-ui/react-label` - Label form
+  - `@radix-ui/react-progress` - Progress bar
+  - `@radix-ui/react-select` - Select dropdown
+  - `@radix-ui/react-switch` - Toggle switch
+  - `@radix-ui/react-tabs` - Tab navigation
+  - `@radix-ui/react-toast` - Toast notifications
+- **shadcn/ui** - Component patterns xây dựng trên Radix UI
+- **Lucide React** - Icon library (700+ icons)
+
+### Date & Time Handling
+- **date-fns** - Xử lý ngày tháng (format, parse, so sánh, …)
+- **react-day-picker** - Calendar component cho React
+
+### Utility Libraries
+- **class-variance-authority** - Quản lý variants cho components
+- **clsx** - Tạo classname điều kiện
+- **tailwind-merge** - Merge Tailwind classes (tránh conflict)
+
+### State Management & Context
+- **React Context API** - Built-in state management (dùng cho Role, Language context)
+- Custom Hooks:
+  - `useAsyncData` - Fetch & cache dữ liệu bất đồng bộ
+  - `useToast` - Hiển thị toast notifications
+  - `useRole` - Lấy role hiện tại từ Context
+  - `useLanguage` - Hỗ trợ đa ngôn ngữ
+
+### Development & Testing Tools
+- **ESLint** - Linting code quality
+- **TypeScript Compiler** - Type checking
+- **Vite plugins** - React plugin, TypeScript support
+
+---
+
 ## 3. Cấu trúc & dữ liệu mock
 
 | Thư mục | Mục đích |
@@ -54,7 +101,7 @@ Các thư viện quan trọng khác được mô tả chi tiết trong `package.
 | `src/application/services/` | Chứa business logic (ví dụ `tutorSuggestionService`, `meetingService`, …) |
 | `src/screens/` & `src/components/` | UI chính của từng màn hình |
 
-### Nguyên tắc mock data
+### Nguyên tắc mock data (Tiếp tục từ section 3)
 
 - **Người dùng:** `src/data/mockUsers.ts` tạo tổng cộng 600 tài khoản (525 student, 70 tutor, 5 manager) với mật khẩu mặc định theo role (`student123`, `tutor123`, `manager123`). Một số user “featured” được khai báo cứng để dễ đăng nhập test.
 - **Tutor Profiles:** `src/data/mockTutors.ts` tái sử dụng danh sách tutor accounts và bổ sung thông tin hiển thị (rating, kỹ năng, lịch trống, …).
