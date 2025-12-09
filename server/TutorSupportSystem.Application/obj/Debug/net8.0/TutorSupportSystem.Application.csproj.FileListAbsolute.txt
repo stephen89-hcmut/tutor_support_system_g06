@@ -1,0 +1,17 @@
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\bin\Debug\net8.0\TutorSupportSystem.Application.deps.json
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\bin\Debug\net8.0\TutorSupportSystem.Application.dll
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\bin\Debug\net8.0\TutorSupportSystem.Application.pdb
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\bin\Debug\net8.0\TutorSupportSystem.Domain.dll
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\bin\Debug\net8.0\TutorSupportSystem.Infrastructure.dll
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\bin\Debug\net8.0\TutorSupportSystem.Domain.pdb
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\bin\Debug\net8.0\TutorSupportSystem.Infrastructure.pdb
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\obj\Debug\net8.0\TutorSupportSystem.Application.csproj.AssemblyReference.cache
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\obj\Debug\net8.0\TutorSupportSystem.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\obj\Debug\net8.0\TutorSupportSystem.Application.AssemblyInfoInputs.cache
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\obj\Debug\net8.0\TutorSupportSystem.Application.AssemblyInfo.cs
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\obj\Debug\net8.0\TutorSupportSystem.Application.csproj.CoreCompileInputs.cache
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\obj\Debug\net8.0\TutorSup.C4E98940.Up2Date
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\obj\Debug\net8.0\TutorSupportSystem.Application.dll
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\obj\Debug\net8.0\refint\TutorSupportSystem.Application.dll
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\obj\Debug\net8.0\TutorSupportSystem.Application.pdb
+C:\Users\stephen-work\source\repos\HCMUT\tutor_support_system_g06\server\TutorSupportSystem.Application\obj\Debug\net8.0\ref\TutorSupportSystem.Application.dll
