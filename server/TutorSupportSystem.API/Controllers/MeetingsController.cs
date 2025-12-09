@@ -1,4 +1,3 @@
-using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TutorSupportSystem.Application.DTOs;
@@ -14,13 +13,11 @@ public class MeetingsController : ControllerBase
 {
     private readonly IMeetingService _meetingService;
     private readonly AppDbContext _dbContext;
-    private readonly IMapper _mapper;
 
-    public MeetingsController(IMeetingService meetingService, AppDbContext dbContext, IMapper mapper)
+    public MeetingsController(IMeetingService meetingService, AppDbContext dbContext)
     {
         _meetingService = meetingService;
         _dbContext = dbContext;
-        _mapper = mapper;
     }
 
     [HttpPost]
@@ -68,7 +65,19 @@ public class MeetingsController : ControllerBase
         }
 
         var results = await query.OrderBy(m => m.StartTime).ToListAsync(cancellationToken);
-        var dtos = results.Select(m => _mapper.Map<MeetingDto>(m)).ToList();
+        var dtos = results.Select(m => new MeetingDto(
+            m.Id,
+            m.Title,
+            m.StartTime,
+            m.EndTime,
+            m.Mode,
+            m.TutorId,
+            m.MinCapacity,
+            m.MaxCapacity,
+            m.CurrentCount,
+            m.Status
+        ));
+
         return Ok(dtos);
     }
 }

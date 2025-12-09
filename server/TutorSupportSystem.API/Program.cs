@@ -22,11 +22,9 @@ builder.Services.AddScoped<IAiMatchingService, AiMatchingService>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Always expose Swagger UI to make manual testing easy during development/runs
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 

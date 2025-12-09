@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using TutorSupportSystem.Application.DTOs;
@@ -21,13 +20,11 @@ public class MeetingService : IMeetingService
 
     private readonly AppDbContext _dbContext;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
 
-    public MeetingService(AppDbContext dbContext, IUnitOfWork unitOfWork, IMapper mapper)
+    public MeetingService(AppDbContext dbContext, IUnitOfWork unitOfWork)
     {
         _dbContext = dbContext;
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
     }
 
     public async Task<MeetingDto> CreateMeetingAsync(CreateMeetingRequest request, CancellationToken cancellationToken = default)
@@ -58,7 +55,7 @@ public class MeetingService : IMeetingService
         await _unitOfWork.Meetings.AddAsync(meeting, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return _mapper.Map<MeetingDto>(meeting);
+        return MapToDto(meeting);
     }
 
     public async Task<bool> BookMeetingAsync(BookingRequest request, CancellationToken cancellationToken = default)
@@ -168,11 +165,27 @@ public class MeetingService : IMeetingService
             .OrderBy(m => m.StartTime)
             .ToListAsync(cancellationToken);
 
-        return meetings.Select(m => _mapper.Map<MeetingDto>(m)).ToList();
+        return meetings.Select(MapToDto).ToList();
     }
 
     private static bool IsOverlapping(DateTime startA, DateTime endA, DateTime startB, DateTime endB)
     {
         return startA < endB && endA > startB;
+    }
+
+    private static MeetingDto MapToDto(Meeting meeting)
+    {
+        return new MeetingDto(
+            meeting.Id,
+            meeting.Title,
+            meeting.StartTime,
+            meeting.EndTime,
+            meeting.Mode,
+            meeting.TutorId,
+            meeting.MinCapacity,
+            meeting.MaxCapacity,
+            meeting.CurrentCount,
+            meeting.Status
+        );
     }
 }

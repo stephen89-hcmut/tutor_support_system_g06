@@ -4127,11 +4127,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\Users\\stephen-work\\source\\repos\\HCMUT\\tutor_support_system_g06\\server\\TutorSupportSystem.Infrastructure\\TutorSupportSystem.Infrastructure.csproj",
+      "projectUniqueName": "C:\\Users\\stephen-work\\source\\repos\\HCMUT\\tutor_support_system_g06\\server\\TutorSupportSystem.Infrastructure\\TutorSupportSystem.Infrastructure.csproj",
       "projectName": "TutorSupportSystem.Infrastructure",
-      "projectPath": "c:\\Users\\stephen-work\\source\\repos\\HCMUT\\tutor_support_system_g06\\server\\TutorSupportSystem.Infrastructure\\TutorSupportSystem.Infrastructure.csproj",
+      "projectPath": "C:\\Users\\stephen-work\\source\\repos\\HCMUT\\tutor_support_system_g06\\server\\TutorSupportSystem.Infrastructure\\TutorSupportSystem.Infrastructure.csproj",
       "packagesPath": "C:\\Users\\stephen-work\\.nuget\\packages\\",
-      "outputPath": "c:\\Users\\stephen-work\\source\\repos\\HCMUT\\tutor_support_system_g06\\server\\TutorSupportSystem.Infrastructure\\obj\\",
+      "outputPath": "C:\\Users\\stephen-work\\source\\repos\\HCMUT\\tutor_support_system_g06\\server\\TutorSupportSystem.Infrastructure\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
