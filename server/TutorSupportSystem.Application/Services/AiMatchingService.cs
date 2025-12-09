@@ -34,13 +34,16 @@ public class AiMatchingService : IAiMatchingService
             .Include(t => t.User)
             .ToListAsync(cancellationToken);
 
-        var weakSubjects = student.WeakSubjects ?? Array.Empty<string>();
+        var weakSubjects = (student.WeakSubjects ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
         var results = tutors.Select(tutor =>
         {
-            var expertise = tutor.Expertise ?? Array.Empty<string>();
+            var expertise = (tutor.Expertise ?? string.Empty)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
             var matchCount = weakSubjects.Count(ws => expertise.Contains(ws, StringComparer.OrdinalIgnoreCase));
-            var subjectMatchScore = weakSubjects.Count == 0 ? 0 : (double)matchCount / weakSubjects.Count;
+            var subjectMatchScore = weakSubjects.Length == 0 ? 0 : (double)matchCount / weakSubjects.Length;
             var ratingScore = Math.Clamp(tutor.AverageRating / 5.0, 0, 1);
 
             // Weight: subjects 40%, rating 20% (scaled to 100%).

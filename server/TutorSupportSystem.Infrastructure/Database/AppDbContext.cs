@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TutorSupportSystem.Domain.Entities;
+using TutorSupportSystem.Domain.Enums;
 
 namespace TutorSupportSystem.Infrastructure.Database;
 
@@ -21,53 +17,60 @@ public class AppDbContext : DbContext
     public DbSet<Participant> Participants => Set<Participant>();
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
     public DbSet<ProgressRecord> ProgressRecords => Set<ProgressRecord>();
+    public DbSet<Material> Materials => Set<Material>();
+    public DbSet<TutorSuggestion> TutorSuggestions => Set<TutorSuggestion>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        var stringCollectionConverter = new ValueConverter<ICollection<string>, string>(
-            v => string.Join(';', v),
-            v => string.IsNullOrWhiteSpace(v)
-                ? new List<string>()
-                : v.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList()
-        );
-
-        var stringCollectionComparer = new ValueComparer<ICollection<string>>(
-            (c1, c2) => (c1 ?? Array.Empty<string>()).SequenceEqual(c2 ?? Array.Empty<string>()),
-            c => (c ?? Array.Empty<string>()).Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-            c => (c ?? Array.Empty<string>()).ToList()
-        );
-
         modelBuilder.Entity<User>(entity =>
         {
+            entity.Property(u => u.SsoId).IsRequired().HasMaxLength(100);
+            entity.Property(u => u.Email).IsRequired().HasMaxLength(255);
+            entity.Property(u => u.FullName).IsRequired().HasMaxLength(200);
+            entity.Property(u => u.AvatarUrl).HasMaxLength(500);
+            entity.Property(u => u.PhoneNumber).HasMaxLength(20);
+
             entity.HasOne(u => u.StudentProfile)
                 .WithOne(s => s.User)
                 .HasForeignKey<StudentProfile>(s => s.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(u => u.TutorProfile)
                 .WithOne(t => t.User)
                 .HasForeignKey<TutorProfile>(t => t.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<StudentProfile>(entity =>
         {
-            entity.Property(s => s.WeakSubjects)
-                .HasConversion(stringCollectionConverter)
-                .Metadata.SetValueComparer(stringCollectionComparer);
+            entity.Property(s => s.StudentCode).IsRequired().HasMaxLength(50);
+            entity.Property(s => s.Faculty).HasMaxLength(200);
+            entity.Property(s => s.Major).HasMaxLength(200);
+            entity.Property(s => s.WeakSubjects).HasMaxLength(500);
+            entity.Property(s => s.LearningStyles).HasMaxLength(500);
         });
 
         modelBuilder.Entity<TutorProfile>(entity =>
         {
-            entity.Property(t => t.Expertise)
-                .HasConversion(stringCollectionConverter)
-                .Metadata.SetValueComparer(stringCollectionComparer);
+            entity.Property(t => t.TutorCode).IsRequired().HasMaxLength(50);
+            entity.Property(t => t.Bio).HasMaxLength(2000);
+            entity.Property(t => t.Expertise).HasMaxLength(500);
+            entity.Property(t => t.TeachingMethod).HasMaxLength(500);
+            entity.Property(t => t.CertificatesUrl).HasMaxLength(500);
         });
 
         modelBuilder.Entity<Meeting>(entity =>
         {
+            entity.Property(m => m.Title).IsRequired().HasMaxLength(200);
+            entity.Property(m => m.Mode).IsRequired();
+            entity.Property(m => m.StartTime).IsRequired();
+            entity.Property(m => m.EndTime).IsRequired();
+            entity.Property(m => m.MinCapacity).IsRequired();
+            entity.Property(m => m.MaxCapacity).IsRequired();
+
             entity.HasOne(m => m.Tutor)
                 .WithMany(u => u.TutorMeetings)
                 .HasForeignKey(m => m.TutorId)
@@ -76,40 +79,93 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Participant>(entity =>
         {
+            entity.Property(p => p.Note).HasMaxLength(1000);
+
             entity.HasOne(p => p.Meeting)
                 .WithMany(m => m.Participants)
                 .HasForeignKey(p => p.MeetingId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(p => p.Student)
-                .WithMany(s => s.Participations)
+                .WithMany(u => u.Participations)
                 .HasForeignKey(p => p.StudentId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(p => new { p.MeetingId, p.StudentId }).IsUnique();
         });
 
         modelBuilder.Entity<ProgressRecord>(entity =>
         {
+            entity.Property(p => p.Understanding).IsRequired();
+            entity.Property(p => p.ProblemSolving).IsRequired();
+            entity.Property(p => p.CodeQuality).IsRequired();
+            entity.Property(p => p.Participation).IsRequired();
+            entity.Property(p => p.TutorComments).HasMaxLength(2000);
+            entity.Property(p => p.PrivateNote).HasMaxLength(2000);
+
             entity.HasOne(p => p.Meeting)
                 .WithMany(m => m.ProgressRecords)
                 .HasForeignKey(p => p.MeetingId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(p => p.Student)
                 .WithMany(s => s.ProgressRecords)
                 .HasForeignKey(p => p.StudentId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Feedback>(entity =>
         {
+            entity.Property(f => f.Comment).IsRequired().HasMaxLength(2000);
+            entity.Property(f => f.TutorReply).HasMaxLength(2000);
+
             entity.HasOne(f => f.Meeting)
                 .WithMany(m => m.Feedbacks)
                 .HasForeignKey(f => f.MeetingId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(f => f.Student)
                 .WithMany(s => s.Feedbacks)
                 .HasForeignKey(f => f.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(f => f.Tutor)
+                .WithMany(t => t.Feedbacks)
+                .HasForeignKey(f => f.TutorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Material>(entity =>
+        {
+            entity.Property(m => m.Title).IsRequired().HasMaxLength(255);
+            entity.Property(m => m.FileUrl).HasMaxLength(500);
+            entity.Property(m => m.LibraryResourceId).HasMaxLength(200);
+
+            entity.HasOne(m => m.Uploader)
+                .WithMany()
+                .HasForeignKey(m => m.UploadedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<TutorSuggestion>(entity =>
+        {
+            entity.Property(t => t.MatchingReason).HasMaxLength(1000);
+
+            entity.HasOne(ts => ts.Tutor)
+                .WithMany()
+                .HasForeignKey(ts => ts.TutorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.Property(n => n.Title).IsRequired().HasMaxLength(255);
+            entity.Property(n => n.Message).IsRequired().HasMaxLength(2000);
+            entity.Property(n => n.Type).HasMaxLength(50);
+
+            entity.HasOne(n => n.User)
+                .WithMany(u => u.Notifications)
+                .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

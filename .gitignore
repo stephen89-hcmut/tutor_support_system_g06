@@ -12,6 +12,51 @@ dist
 dist-ssr
 *.local
 
+# Vite/TypeScript caches
+.parcel-cache
+.turbo
+.cache
+*.tsbuildinfo
+*.tsbuildinfo.*
+
+# Build outputs
+build/
+coverage/
+*.tgz
+
+# ASP.NET Core / .NET
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+**/bin/
+**/obj/
+**/Debug/
+**/Release/
+**/TestResults/
+**/AppPackages/
+**/BundleArtifacts/
+**/project.lock.json
+**/project.fragment.lock.json
+**/artifacts/
+**/packages/
+*.nupkg
+*.snupkg
+*.psess
+*.vsp
+*.vspscc
+*.vssscc
+*.pidb
+*.svclog
+*.scc
+
+# ASP.NET https certs
+**/.vs/
+**/Properties/launchSettings.json
+*.pfx
+*.p12
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

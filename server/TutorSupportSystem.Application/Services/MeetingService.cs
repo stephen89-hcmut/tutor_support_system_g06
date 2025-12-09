@@ -31,7 +31,7 @@ public class MeetingService : IMeetingService
     {
         var hasConflict = await _dbContext.Meetings
             .AnyAsync(m => m.TutorId == request.TutorId
-                && m.Status != MeetingStatus.Cancelled
+                && m.Status != MeetingStatus.CancelledByTutor
                 && IsOverlapping(m.StartTime, m.EndTime, request.StartTime, request.EndTime), cancellationToken);
 
         if (hasConflict)
@@ -70,7 +70,7 @@ public class MeetingService : IMeetingService
                 .Include(m => m.Participants)
                 .FirstOrDefaultAsync(m => m.Id == request.MeetingId, cancellationToken);
 
-            if (meeting is null || meeting.Status == MeetingStatus.Cancelled || meeting.Status == MeetingStatus.Completed)
+            if (meeting is null || meeting.Status == MeetingStatus.CancelledByTutor || meeting.Status == MeetingStatus.CancelledBySystem || meeting.Status == MeetingStatus.Completed)
             {
                 return false;
             }
@@ -84,7 +84,8 @@ public class MeetingService : IMeetingService
                 .Include(p => p.Meeting)
                 .AnyAsync(p => p.StudentId == request.StudentId
                     && p.Meeting != null
-                    && p.Meeting.Status != MeetingStatus.Cancelled
+                    && p.Meeting.Status != MeetingStatus.CancelledByTutor
+                    && p.Meeting.Status != MeetingStatus.CancelledBySystem
                     && IsOverlapping(p.Meeting.StartTime, p.Meeting.EndTime, meeting.StartTime, meeting.EndTime), cancellationToken);
 
             if (studentConflict)
@@ -96,7 +97,7 @@ public class MeetingService : IMeetingService
             {
                 MeetingId = meeting.Id,
                 StudentId = request.StudentId,
-                Status = "Confirmed"
+                Status = ParticipantStatus.Registered
             });
 
             meeting.CurrentCount += 1;
@@ -144,7 +145,7 @@ public class MeetingService : IMeetingService
                 }
             }
 
-            meeting.Status = MeetingStatus.Cancelled;
+            meeting.Status = MeetingStatus.CancelledByTutor;
             meeting.CurrentCount = 0;
             meeting.Participants.Clear();
 
@@ -161,7 +162,7 @@ public class MeetingService : IMeetingService
     {
         var now = DateTime.UtcNow;
         var meetings = await _dbContext.Meetings
-            .Where(m => m.TutorId == tutorId && m.StartTime >= now && m.Status != MeetingStatus.Cancelled)
+            .Where(m => m.TutorId == tutorId && m.StartTime >= now && m.Status != MeetingStatus.CancelledByTutor && m.Status != MeetingStatus.CancelledBySystem)
             .OrderBy(m => m.StartTime)
             .ToListAsync(cancellationToken);
 

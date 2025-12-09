@@ -6,6 +6,7 @@ public class ProgressRecord : BaseEntity
 {
     public Guid MeetingId { get; set; }
     public Guid StudentId { get; set; }
+    public Guid TutorId { get; set; }
 
     // Scores
     public int Understanding { get; set; }
