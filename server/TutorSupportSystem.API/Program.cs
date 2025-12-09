@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.EntityFrameworkCore;
 using TutorSupportSystem.Application.Interfaces;
 using TutorSupportSystem.Application.Services;
@@ -7,13 +8,36 @@ using TutorSupportSystem.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Logging.ClearProviders();
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
+    options.UseUtcTimestamp = true;
+});
+builder.Logging.SetMinimumLevel(LogLevel.Information);
+
+builder.Services.AddHttpLogging(options =>
+{
+    options.LoggingFields = HttpLoggingFields.All;
+    options.RequestBodyLogLimit = 4096;
+    options.ResponseBodyLogLimit = 4096;
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options
+        .UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+        .EnableSensitiveDataLogging()
+        .EnableDetailedErrors()
+        .LogTo(Console.WriteLine, new[]
+        {
+            DbLoggerCategory.Database.Command.Name,
+            DbLoggerCategory.Migrations.Name
+        }, LogLevel.Information));
 
 // DI registrations
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -26,6 +50,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseHttpLogging();
 app.UseAuthorization();
 
 app.MapControllers();
