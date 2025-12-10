@@ -1,9 +1,9 @@
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using TutorSupportSystem.Application.DTOs;
 using TutorSupportSystem.Application.Interfaces;
 using TutorSupportSystem.Domain.Enums;
-using TutorSupportSystem.Infrastructure.Database;
 
 namespace TutorSupportSystem.API.Controllers;
 
@@ -12,72 +12,171 @@ namespace TutorSupportSystem.API.Controllers;
 public class MeetingsController : ControllerBase
 {
     private readonly IMeetingService _meetingService;
-    private readonly AppDbContext _dbContext;
 
-    public MeetingsController(IMeetingService meetingService, AppDbContext dbContext)
+    public MeetingsController(IMeetingService meetingService)
     {
         _meetingService = meetingService;
-        _dbContext = dbContext;
     }
 
     [HttpPost]
+    [Authorize(Roles = "Tutor")]
     public async Task<IActionResult> Create([FromBody] CreateMeetingRequest request, CancellationToken cancellationToken)
     {
-        var created = await _meetingService.CreateMeetingAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+        try
+        {
+            var created = await _meetingService.CreateSlotAsync(request, cancellationToken);
+            return CreatedAtAction(nameof(Create), new { id = created.Id }, created);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
-    [HttpPost("{id:guid}/book")]
-    public async Task<IActionResult> Book(Guid id, [FromBody] BookingRequest request, CancellationToken cancellationToken)
+    [HttpPost("{id:guid}/join")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> Join(Guid id, CancellationToken cancellationToken)
     {
-        if (id != request.MeetingId)
+        try
         {
-            return BadRequest("Meeting id mismatch.");
+            await _meetingService.JoinMeetingAsync(id, cancellationToken);
+            return Ok();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    public class CancelBody
+    {
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    [HttpPost("{id:guid}/cancel")]
+    [Authorize(Roles = "Student,Tutor")]
+    public async Task<IActionResult> Cancel(Guid id, [FromBody] CancelBody body, CancellationToken cancellationToken)
+    {
+        if (!User.IsInRole("Student") && !User.IsInRole("Tutor"))
+        {
+            return Forbid();
         }
 
-        var success = await _meetingService.BookMeetingAsync(request, cancellationToken);
-        return success ? Ok() : BadRequest("Unable to book meeting (conflict or capacity reached).");
+        try
+        {
+            await _meetingService.CancelMeetingAsync(id, body.Reason, cancellationToken);
+            return Ok();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    [HttpPatch("{id:guid}/start")]
+    [Authorize(Roles = "Tutor")]
+    public async Task<IActionResult> Start(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _meetingService.StartMeetingAsync(id, cancellationToken);
+            return Ok();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    [HttpPatch("{id:guid}/finish")]
+    [Authorize(Roles = "Tutor")]
+    public async Task<IActionResult> Finish(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _meetingService.FinishMeetingAsync(id, cancellationToken);
+            return Ok();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    [HttpPost("{id:guid}/attendance")]
+    [Authorize(Roles = "Tutor")]
+    public async Task<IActionResult> SubmitAttendance(Guid id, [FromBody] List<AttendanceEntry> entries, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _meetingService.SubmitAttendanceAsync(id, entries, cancellationToken);
+            return Ok();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get([FromQuery] Guid? tutorId, [FromQuery] DateTime? start, [FromQuery] DateTime? end, [FromQuery] MeetingStatus? status, CancellationToken cancellationToken)
+    [Authorize]
+    public async Task<IActionResult> GetMyMeetings(CancellationToken cancellationToken)
     {
-        var query = _dbContext.Meetings.AsQueryable();
-
-        if (tutorId.HasValue)
+        try
         {
-            query = query.Where(m => m.TutorId == tutorId.Value);
+            var meetings = await _meetingService.GetMyMeetingsAsync(cancellationToken);
+            return Ok(meetings);
         }
-
-        if (start.HasValue)
+        catch (InvalidOperationException ex)
         {
-            query = query.Where(m => m.StartTime >= start.Value);
+            return BadRequest(ex.Message);
         }
+    }
 
-        if (end.HasValue)
+    [HttpGet("{id:guid}")]
+    [Authorize]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        try
         {
-            query = query.Where(m => m.EndTime <= end.Value);
+            var meeting = await _meetingService.GetMeetingByIdAsync(id, cancellationToken);
+            return Ok(meeting);
         }
-
-        if (status.HasValue)
+        catch (UnauthorizedAccessException)
         {
-            query = query.Where(m => m.Status == status.Value);
+            return Forbid();
         }
-
-        var results = await query.OrderBy(m => m.StartTime).ToListAsync(cancellationToken);
-        var dtos = results.Select(m => new MeetingDto(
-            m.Id,
-            m.Title,
-            m.StartTime,
-            m.EndTime,
-            m.Mode,
-            m.TutorId,
-            m.MinCapacity,
-            m.MaxCapacity,
-            m.CurrentCount,
-            m.Status
-        ));
-
-        return Ok(dtos);
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 }

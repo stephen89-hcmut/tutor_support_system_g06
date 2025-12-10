@@ -1,10 +1,17 @@
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using TutorSupportSystem.API.Jobs;
+using TutorSupportSystem.API.Auth;
 using TutorSupportSystem.Application.Interfaces;
 using TutorSupportSystem.Application.Services;
+using TutorSupportSystem.Domain.Interfaces;
 using TutorSupportSystem.Domain.Repositories;
-using TutorSupportSystem.Infrastructure.Database;
+using TutorSupportSystem.Infrastructure.Auth;
 using TutorSupportSystem.Infrastructure.Data;
+using TutorSupportSystem.Infrastructure.Database;
 using TutorSupportSystem.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +34,31 @@ builder.Services.AddHttpLogging(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpContextAccessor();
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
+var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
+var keyBytes = Encoding.UTF8.GetBytes(jwtSettings.Key);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidAudience = jwtSettings.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
+    };
+});
 
 // DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -44,6 +76,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
 builder.Services.AddScoped<IAiMatchingService, AiMatchingService>();
+builder.Services.AddScoped<IUserContext, HttpUserContext>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddSingleton<ITokenService, TokenService>();
+builder.Services.AddScoped<IRefreshTokenStore, EfRefreshTokenStore>();
+builder.Services.AddHostedService<MeetingConfirmationJob>();
 
 var app = builder.Build();
 

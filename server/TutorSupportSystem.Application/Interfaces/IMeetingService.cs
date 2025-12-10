@@ -8,8 +8,12 @@ namespace TutorSupportSystem.Application.Interfaces;
 
 public interface IMeetingService
 {
-    Task<MeetingDto> CreateMeetingAsync(CreateMeetingRequest request, CancellationToken cancellationToken = default);
-    Task<bool> BookMeetingAsync(BookingRequest request, CancellationToken cancellationToken = default);
-    Task<bool> CancelMeetingAsync(Guid meetingId, Guid userId, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<MeetingDto>> GetUpcomingForTutorAsync(Guid tutorId, CancellationToken cancellationToken = default);
+    Task<MeetingDto> CreateSlotAsync(CreateMeetingRequest request, CancellationToken cancellationToken = default);
+    Task JoinMeetingAsync(Guid meetingId, CancellationToken cancellationToken = default);
+    Task CancelMeetingAsync(Guid meetingId, string reason, CancellationToken cancellationToken = default);
+    Task StartMeetingAsync(Guid meetingId, CancellationToken cancellationToken = default);
+    Task FinishMeetingAsync(Guid meetingId, CancellationToken cancellationToken = default);
+    Task SubmitAttendanceAsync(Guid meetingId, List<AttendanceEntry> attendance, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<MeetingDto>> GetMyMeetingsAsync(CancellationToken cancellationToken = default);
+    Task<MeetingDto> GetMeetingByIdAsync(Guid meetingId, CancellationToken cancellationToken = default);
 }
