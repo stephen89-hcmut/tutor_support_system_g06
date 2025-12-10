@@ -20,6 +20,7 @@ public class UnitOfWork : IUnitOfWork
         TutorProfiles = new GenericRepository<TutorProfile>(_context);
         Participants = new GenericRepository<Participant>(_context);
         ProgressRecords = new GenericRepository<ProgressRecord>(_context);
+        RefreshTokens = new GenericRepository<RefreshToken>(_context);
     }
 
     public IGenericRepository<User> Users { get; }
@@ -29,6 +30,7 @@ public class UnitOfWork : IUnitOfWork
     public IGenericRepository<TutorProfile> TutorProfiles { get; }
     public IGenericRepository<Participant> Participants { get; }
     public IGenericRepository<ProgressRecord> ProgressRecords { get; }
+    public IGenericRepository<RefreshToken> RefreshTokens { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

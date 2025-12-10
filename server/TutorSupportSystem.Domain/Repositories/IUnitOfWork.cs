@@ -13,5 +13,6 @@ public interface IUnitOfWork : IAsyncDisposable
     IGenericRepository<TutorProfile> TutorProfiles { get; }
     IGenericRepository<Participant> Participants { get; }
     IGenericRepository<ProgressRecord> ProgressRecords { get; }
+    IGenericRepository<RefreshToken> RefreshTokens { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

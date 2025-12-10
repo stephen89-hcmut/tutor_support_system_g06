@@ -342,6 +342,42 @@ namespace TutorSupportSystem.Infrastructure.Data.Migrations
                     b.ToTable("ProgressRecords");
                 });
 
+            modelBuilder.Entity("TutorSupportSystem.Domain.Entities.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("TutorSupportSystem.Domain.Entities.StudentProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -677,6 +713,17 @@ namespace TutorSupportSystem.Infrastructure.Data.Migrations
                     b.Navigation("Meeting");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("TutorSupportSystem.Domain.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("TutorSupportSystem.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TutorSupportSystem.Domain.Entities.StudentProfile", b =>
