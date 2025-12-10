@@ -5,126 +5,70 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, AlertCircle, Eye, EyeOff, BookOpen, Mail, Phone } from 'lucide-react';
+import { Shield, AlertCircle, BookOpen, Mail, Phone } from 'lucide-react';
 import { useRole } from '@/contexts/RoleContext';
 import { useToast } from '@/components/ui/use-toast';
-import type { UserEntity } from '@/domain/entities/user';
 import { authService } from '@/application/services/authService';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import type { AuthSession } from '@/types/auth';
 
 interface LoginPageProps {
-  onLogin: (user: UserEntity) => void;
+  onLogin: (session: AuthSession) => void;
 }
 
 export function LoginPage({ onLogin }: LoginPageProps) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [ticket, setTicket] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const { setRole, setUserId, setUserName } = useRole();
+  const { setRole, setUserId, setUserName, setAccessToken } = useRole();
   const { toast } = useToast();
 
   // Check for auto-login on mount
   useEffect(() => {
-    const savedToken = localStorage.getItem('hcmut_auth_token');
-    const savedUserData = localStorage.getItem('hcmut_user_data');
-    
-    if (savedToken && savedUserData) {
-      try {
-        const userData = JSON.parse(savedUserData);
-        // Simulate token validation
-        setRole(userData.role === 'Manager' ? 'Manager' : (userData.role === 'Student' ? 'Student' : 'Tutor'));
-        setUserId(userData.userId);
-        setUserName(userData.username);
-        onLogin(userData as UserEntity);
-        toast({
-          title: 'Auto-login successful',
-          description: `Welcome back, ${userData.username}!`,
-        });
-      } catch (e) {
-        // Invalid saved data, clear it
-        localStorage.removeItem('hcmut_auth_token');
-        localStorage.removeItem('hcmut_user_data');
-      }
+    const session = authService.getSession();
+    if (session) {
+      setRole(session.role);
+      setUserId(session.userId);
+      setUserName(session.fullName);
+      setAccessToken(session.accessToken);
+      onLogin(session);
+      toast({
+        title: 'Đăng nhập tự động',
+        description: `Chào mừng, ${session.fullName}!`,
+      });
     }
-  }, [setRole, setUserId, setUserName, onLogin, toast]);
+  }, [setRole, setUserId, setUserName, setAccessToken, onLogin, toast]);
 
   const handleSignIn = async () => {
     // Clear previous errors
     setLoginError(null);
 
     // Validation
-    if (!username.trim()) {
-      setLoginError('Vui lòng nhập tên đăng nhập.');
-      return;
-    }
-
-    if (!password.trim()) {
-      setLoginError('Vui lòng nhập mật khẩu.');
+    if (!ticket.trim()) {
+      setLoginError('Vui lòng nhập SSO ID / Ticket.');
       return;
     }
 
     setIsAuthenticating(true);
 
     try {
-      const user = await authService.login(username.trim(), password);
+      const session = await authService.loginWithTicket(ticket.trim(), rememberMe);
 
-      if (!user) {
-        setLoginError('Sai tên đăng nhập hoặc mật khẩu.');
-        setIsAuthenticating(false);
-        return;
-      }
+      setRole(session.role);
+      setUserId(session.userId);
+      setUserName(session.fullName);
+      setAccessToken(session.accessToken);
 
-      // Authentication successful
-      const token = `hcmut_token_${Date.now()}_${user.userId}`;
-      const userData = {
-        userId: user.userId,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        ...(user.role === 'Student' && {
-          studentId: (user as any).studentId,
-          enrollmentYear: (user as any).enrollmentYear,
-          majors: (user as any).majors,
-        }),
-        ...(user.role === 'Tutor' && {
-          tutorId: (user as any).tutorId,
-          expertise: (user as any).expertise,
-          ratingAvg: (user as any).ratingAvg,
-          isInstructor: (user as any).isInstructor,
-        }),
-        ...(user.role === 'Manager' && {
-          managerId: (user as any).managerId,
-          department: (user as any).department,
-        }),
-      };
-
-      // Save token and user data
-      if (rememberMe) {
-        localStorage.setItem('hcmut_auth_token', token);
-        localStorage.setItem('hcmut_user_data', JSON.stringify(userData));
-      } else {
-        sessionStorage.setItem('hcmut_auth_token', token);
-        sessionStorage.setItem('hcmut_user_data', JSON.stringify(userData));
-      }
-
-      // Set role context
-      setRole(user.role);
-      setUserId(user.userId);
-      setUserName(user.username);
-
-      // Call onLogin with user data
-      onLogin(user);
+      onLogin(session);
 
       toast({
         title: 'Đăng nhập thành công',
-        description: `Chào mừng, ${user.username}!`,
+        description: `Chào mừng, ${session.fullName}!`,
       });
     } catch (error: any) {
-      setLoginError('Không thể kết nối đến máy chủ SSO. Vui lòng thử lại sau.');
+      setLoginError(error?.message || 'Không thể đăng nhập. Vui lòng kiểm tra SSO ID / Ticket.');
     } finally {
       setIsAuthenticating(false);
     }
@@ -154,10 +98,10 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               {/* Header */}
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-red-600 mb-2">
-                  Nhập thông tin tài khoản của bạn
+                  Đăng nhập bằng SSO ID / Ticket
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Đăng nhập bằng tài khoản HCMUT của bạn
+                  Hệ thống sẽ xác thực SSO ID có tồn tại trong database để cấp quyền theo role.
                 </p>
               </div>
 
@@ -171,18 +115,18 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
               {/* Login Form */}
               <div className="space-y-6">
-                {/* Username Field */}
+                {/* SSO ID / Ticket Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="username" className="text-sm font-medium">
-                    Tên tài khoản
+                  <Label htmlFor="ticket" className="text-sm font-medium">
+                    SSO ID / Ticket
                   </Label>
                   <Input
-                    id="username"
+                    id="ticket"
                     type="text"
-                    placeholder="Nhập tên đăng nhập"
-                    value={username}
+                    placeholder="Ví dụ: SSO_STUDENT_1 hoặc SSO_ADMIN"
+                    value={ticket}
                     onChange={(e) => {
-                      setUsername(e.target.value);
+                      setTicket(e.target.value);
                       setLoginError(null);
                     }}
                     onKeyDown={(e) => {
@@ -193,43 +137,6 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                     disabled={isAuthenticating}
                     className="h-12 text-base"
                   />
-                </div>
-
-                {/* Password Field */}
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium">
-                    Mật khẩu
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Nhập mật khẩu"
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        setLoginError(null);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleSignIn();
-                        }
-                      }}
-                      disabled={isAuthenticating}
-                      className="h-12 pr-12 text-base"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
                 </div>
 
                 {/* Warning Checkbox */}
@@ -266,7 +173,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                 <div className="flex justify-center">
                   <Button
                     onClick={handleSignIn}
-                    disabled={isAuthenticating || !username.trim() || !password.trim()}
+                    disabled={isAuthenticating || !ticket.trim()}
                     className="w-full max-w-md bg-primary hover:bg-primary-dark h-12 text-base font-semibold"
                     size="lg"
                   >

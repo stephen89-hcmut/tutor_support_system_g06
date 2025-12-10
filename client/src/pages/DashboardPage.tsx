@@ -21,6 +21,10 @@ import {
   Users,
   TrendingUp,
   BarChart3,
+  Bell,
+  Sparkles,
+  Activity,
+  Shield,
 } from 'lucide-react';
 import type { Meeting } from '@/domain/entities/meeting';
 import { meetingService } from '@/application/services/meetingService';
@@ -136,6 +140,12 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       .slice(0, 5);
   }, [meetings]);
 
+  const nextMeeting = useMemo(() => {
+    return [...meetings]
+      .filter((m) => m.status === 'Scheduled')
+      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())[0];
+  }, [meetings]);
+
   const getRatingColor = (status: string) => {
     switch (status) {
       case 'Scheduled':
@@ -157,17 +167,45 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     return <div className="p-6 text-center text-muted-foreground">{error}</div>;
   }
 
+  const renderWelcome = () => {
+    if (role === 'Student') {
+      return (
+        <>
+          <h1 className="text-3xl font-bold mb-2">Chào bạn, chúc học tốt hôm nay!</h1>
+          <p className="text-muted-foreground">Kiểm tra lịch sắp tới, đồng bộ dữ liệu và xem gợi ý Tutor phù hợp.</p>
+        </>
+      );
+    }
+    if (role === 'Tutor') {
+      return (
+        <>
+          <h1 className="text-3xl font-bold mb-2">Chào Tutor, đây là việc cần làm hôm nay</h1>
+          <p className="text-muted-foreground">Duyệt yêu cầu đặt lịch, điểm danh và ghi nhận tiến độ cho các buổi đã hoàn thành.</p>
+        </>
+      );
+    }
+    if (role === 'Manager') {
+      return (
+        <>
+          <h1 className="text-3xl font-bold mb-2">System Overview</h1>
+          <p className="text-muted-foreground">Theo dõi sức khỏe hệ thống, cảnh báo và các yêu cầu phê duyệt.</p>
+        </>
+      );
+    }
+    return (
+      <>
+        <h1 className="text-3xl font-bold mb-2">Welcome</h1>
+        <p className="text-muted-foreground">Manage your academic meetings, track progress, and collaborate.</p>
+      </>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Welcome to HCMUT Meeting Management</h1>
-        <p className="text-muted-foreground">
-          Manage your academic meetings, track progress, and collaborate with tutors.
-        </p>
-      </div>
+      <div>{renderWelcome()}</div>
 
-      {/* Summary Cards */}
+       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -256,6 +294,184 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Student focus: next meeting + notifications + AI recommendations */}
+      {role === 'Student' && (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <Card className="xl:col-span-2">
+            <CardHeader>
+              <CardTitle>Buổi học sắp tới</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {nextMeeting ? (
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{nextMeeting.topic}</p>
+                    <h3 className="text-xl font-semibold">Tutor: {nextMeeting.tutorName}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {nextMeeting.date} – {nextMeeting.time}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline">Scheduled</Badge>
+                    <Button onClick={() => onNavigate?.('meetings')}>Xem chi tiết</Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground">Chưa có buổi học sắp tới.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle>Thông báo</CardTitle>
+              <Badge variant="secondary">Mới</Badge>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-start gap-3 p-3 rounded-lg border">
+                  <Bell className="h-4 w-4 text-primary mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium">Nhắc lịch #{i}</p>
+                    <p className="text-muted-foreground">Tutor chấp nhận yêu cầu / có tài liệu mới.</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {role === 'Student' && (
+        <Card>
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle>Gợi ý Tutor phù hợp</CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => onNavigate?.('find-tutor')}>
+              <Sparkles className="h-4 w-4 mr-2" />Xem thêm
+            </Button>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="p-4 rounded-lg border hover:border-primary/50 transition-colors">
+                <p className="text-sm text-muted-foreground">AI Suggestion #{i}</p>
+                <h3 className="font-semibold">Tutor {i}</h3>
+                <p className="text-xs text-muted-foreground">Chuyên môn: DSA, OS, DB</p>
+                <Button variant="link" className="px-0" onClick={() => onNavigate?.('find-tutor')}>
+                  Xem chi tiết
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tutor focus */}
+      {role === 'Tutor' && (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <Card className="xl:col-span-2">
+            <CardHeader>
+              <CardTitle>Việc cần làm</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="p-4 border rounded-lg flex items-center justify-between">
+                <div>
+                  <p className="font-semibold">Yêu cầu đặt lịch đang chờ</p>
+                  <p className="text-sm text-muted-foreground">Duyệt/khước từ các booking mới.</p>
+                </div>
+                <Button variant="outline" onClick={() => onNavigate?.('meetings')}>Xử lý</Button>
+              </div>
+              <div className="p-4 border rounded-lg flex items-center justify-between">
+                <div>
+                  <p className="font-semibold">Ghi nhận tiến độ</p>
+                  <p className="text-sm text-muted-foreground">Hoàn tất biên bản cho buổi đã xong.</p>
+                </div>
+                <Button variant="outline" onClick={() => onNavigate?.('students')}>Ghi nhận</Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Hiệu suất</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Buổi đã dạy</span>
+                <span className="font-semibold">{stats.completed}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Buổi sắp tới</span>
+                <span className="font-semibold">{stats.upcoming}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Số sinh viên</span>
+                <span className="font-semibold">{stats.activeTutors}</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Manager focus */}
+      {role === 'Manager' && (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>System Health</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[
+                { label: 'SSO', status: 'Online' },
+                { label: 'Datacore', status: 'Online' },
+                { label: 'AI Service', status: 'Online' },
+              ].map((svc) => (
+                <div key={svc.label} className="flex items-center justify-between">
+                  <span className="text-sm">{svc.label}</span>
+                  <Badge className="bg-green-500 text-white">{svc.status}</Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Key Metrics</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Meetings (total)</span>
+                <span className="font-semibold">{stats.total}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Upcoming</span>
+                <span className="font-semibold">{stats.upcoming}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Completed</span>
+                <span className="font-semibold">{stats.completed}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Cảnh báo</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Shield className="h-4 w-4 text-amber-500 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium">Alert #{i}</p>
+                    <p className="text-muted-foreground">User có nhiều warning / feedback tiêu cực.</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Charts Section */}

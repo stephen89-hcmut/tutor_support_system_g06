@@ -1,13 +1,33 @@
-import type { UserEntity } from '@/domain/entities/user';
-import { mockUserRepository } from '@/infrastructure/repositories/userRepository';
+import { httpClient } from '@/lib/httpClient';
+import { saveSession, loadSession, clearSession } from '@/lib/authStorage';
+import type { AuthResponse, AuthSession, AppRole } from '@/types/auth';
 
 class AuthService {
-  async login(username: string, password: string): Promise<UserEntity | null> {
-    return mockUserRepository.authenticate(username, password);
+  async loginWithTicket(ticket: string, rememberMe: boolean): Promise<AuthSession> {
+    const data = await httpClient.post<AuthResponse, { ticket: string }>('/Auth/login-sso', { ticket });
+
+    const role = data.role as AppRole;
+    const session: AuthSession = {
+      userId: data.userId,
+      email: data.email,
+      fullName: data.fullName,
+      role,
+      accessToken: data.accessToken,
+      accessTokenExpiresAt: data.accessTokenExpiresAt,
+      refreshToken: data.refreshToken,
+      refreshTokenExpiresAt: data.refreshTokenExpiresAt,
+    };
+
+    saveSession(session, rememberMe);
+    return session;
   }
 
-  async getUserProfile(username: string): Promise<UserEntity | undefined> {
-    return mockUserRepository.findByUsername(username);
+  getSession(): AuthSession | null {
+    return loadSession();
+  }
+
+  logout() {
+    clearSession();
   }
 }
 

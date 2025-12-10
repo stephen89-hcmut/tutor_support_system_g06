@@ -37,6 +37,15 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
+// CORS for frontend (Vite dev server)
+builder.Services.AddCors(options =>
+    options.AddPolicy("Frontend",
+        policy => policy
+            .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()));
+
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
 var keyBytes = Encoding.UTF8.GetBytes(jwtSettings.Key);
 
@@ -97,6 +106,8 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpLogging();
+app.UseCors("Frontend");
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

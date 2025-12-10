@@ -1,10 +1,12 @@
 import React, { useEffect, useState, memo } from 'react';
 import { useRole } from '@/contexts/RoleContext';
-import { 
-  LayoutDashboard, 
-  Video, 
-  TrendingUp, 
-  BookOpen, 
+import {
+  LayoutDashboard,
+  Home,
+  Search,
+  Calendar,
+  TrendingUp,
+  BookOpen,
   Users,
   Shield,
   BarChart3,
@@ -12,7 +14,12 @@ import {
   LogOut,
   User,
   Database,
-  FileText
+  FileText,
+  Folder,
+  List,
+  Activity,
+  UserCheck,
+  PieChart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,28 +42,28 @@ interface MenuItem {
 
 const menuItemsByRole: Record<string, MenuItem[]> = {
   Student: [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'meetings', label: 'Meetings', icon: Video },
-    { id: 'my-progress', label: 'Progress', icon: TrendingUp },
-    { id: 'library', label: 'Library', icon: BookOpen },
+    { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'find-tutor', label: 'Find Tutor', icon: Search },
+    { id: 'meetings', label: 'My Schedule', icon: Calendar },
+    { id: 'my-progress', label: 'Learning Progress', icon: TrendingUp },
+    { id: 'library', label: 'Documents', icon: BookOpen },
     { id: 'profile', label: 'Profile', icon: User },
   ],
   Tutor: [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'meetings', label: 'Meetings', icon: Video },
-    { id: 'students', label: 'Students', icon: Users },
-    { id: 'feedback', label: 'Feedback', icon: MessageSquare },
-    { id: 'library', label: 'Library', icon: BookOpen },
-    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'meetings', label: 'My Schedule', icon: Calendar },
+    { id: 'students', label: 'My Students', icon: Users },
+    { id: 'feedback', label: 'Feedback Analysis', icon: PieChart },
+    { id: 'library', label: 'Documents', icon: Folder },
+    { id: 'profile', label: 'Profile (CV)', icon: UserCheck },
   ],
   Manager: [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'manage-meetings', label: 'Meetings', icon: Video },
-    { id: 'permissions', label: 'Permissions', icon: Shield },
-    { id: 'data-sync', label: 'Data Sync', icon: Database },
-    { id: 'reports', label: 'Reports', icon: FileText },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'library', label: 'Library', icon: BookOpen },
+    { id: 'dashboard', label: 'Dashboard', icon: Activity },
+    { id: 'users', label: 'User Management', icon: Users },
+    { id: 'manage-meetings', label: 'Meeting Management', icon: List },
+    { id: 'reports', label: 'Reports', icon: BarChart3 },
+    { id: 'permissions', label: 'System Settings', icon: Shield },
+    { id: 'library', label: 'Document Control', icon: FileText },
   ],
 };
 

@@ -1,68 +1,43 @@
-import { meetingImpl } from '../implementation/meeting.impl';
-import { Meeting, CreateMeetingPayload, UpdateMeetingPayload } from '../interfaces';
+import { httpClient } from '@/lib/httpClient';
+import type { MeetingDto } from '@/types/meeting';
+import type { AuthSession } from '@/types/auth';
 
-// Simulate network delay
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const authToken = (session: AuthSession | null) => session?.accessToken ?? null;
 
 export const meetingApi = {
-  /**
-   * GET /api/v1/meetings
-   * Query Params: studentId, tutorId, status, fromDate, toDate
-   */
-  getMeetings: async (filters?: { studentId?: string; tutorId?: string; status?: string }) => {
-    await delay(500);
-    return meetingImpl.find(filters);
+  getMyMeetings: async (session: AuthSession | null): Promise<MeetingDto[]> => {
+    return httpClient.get<MeetingDto[]>('/Meetings', authToken(session));
   },
 
-  /**
-   * GET /api/v1/meetings/{id}
-   */
-  getMeetingById: async (id: string): Promise<Meeting> => {
-    await delay(300);
-    const meeting = meetingImpl.findById(id);
-    if (!meeting) throw new Error('Meeting not found');
-    return meeting;
+  getMeetingById: async (id: string, session: AuthSession | null): Promise<MeetingDto> => {
+    return httpClient.get<MeetingDto>(`/Meetings/${id}`, authToken(session));
   },
 
-  /**
-   * POST /api/v1/meetings
-   * Create a new meeting
-   */
-  createMeeting: async (payload: CreateMeetingPayload): Promise<Meeting> => {
-    await delay(800);
-    return meetingImpl.create(payload);
+  joinMeeting: async (id: string, session: AuthSession | null): Promise<void> => {
+    await httpClient.post<void, Record<string, never>>(`/Meetings/${id}/join`, {}, authToken(session));
   },
 
-  /**
-   * PUT /api/v1/meetings/{id}
-   * Update meeting details
-   */
-  updateMeeting: async (id: string, payload: UpdateMeetingPayload): Promise<Meeting> => {
-    await delay(600);
-    const updated = meetingImpl.update(id, payload);
-    if (!updated) throw new Error('Meeting update failed');
-    return updated;
+  cancelMeeting: async (id: string, reason: string, session: AuthSession | null): Promise<void> => {
+    await httpClient.post<void, { reason: string }>(`/Meetings/${id}/cancel`, { reason }, authToken(session));
   },
 
-  /**
-   * DELETE /api/v1/meetings/{id}
-   * Cancel a meeting
-   */
-  cancelMeeting: async (id: string, reason?: string): Promise<{ message: string }> => {
-    await delay(500);
-    const result = meetingImpl.cancel(id, reason);
-    if (!result) throw new Error('Meeting cancellation failed');
-    return { message: 'Meeting cancelled successfully' };
+  createMeeting: async (payload: {
+    subject: string;
+    startTime: string;
+    endTime: string;
+    mode: 'Online' | 'InPerson';
+    link?: string;
+    location?: string;
+    tutorId: string;
+  }, session: AuthSession | null): Promise<MeetingDto> => {
+    return httpClient.post<MeetingDto, typeof payload>('/Meetings', payload, authToken(session));
   },
 
-  /**
-   * GET /api/v1/meetings/{id}/join
-   * Get meeting join link
-   */
-  getJoinUrl: async (id: string): Promise<{ joinUrl: string; platform: string }> => {
-    await delay(300);
-    const joinInfo = meetingImpl.getJoinUrl(id);
-    if (!joinInfo) throw new Error('Failed to get join URL');
-    return joinInfo;
+  startMeeting: async (id: string, session: AuthSession | null): Promise<void> => {
+    await httpClient.patch<void, Record<string, never>>(`/Meetings/${id}/start`, {}, authToken(session));
+  },
+
+  finishMeeting: async (id: string, session: AuthSession | null): Promise<void> => {
+    await httpClient.patch<void, Record<string, never>>(`/Meetings/${id}/finish`, {}, authToken(session));
   },
 };
