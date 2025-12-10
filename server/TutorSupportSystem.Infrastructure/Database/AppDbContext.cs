@@ -20,6 +20,8 @@ public class AppDbContext : DbContext
     public DbSet<Material> Materials => Set<Material>();
     public DbSet<TutorSuggestion> TutorSuggestions => Set<TutorSuggestion>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Faculty> Faculties => Set<Faculty>();
+    public DbSet<Subject> Subjects => Set<Subject>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -47,10 +49,16 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<StudentProfile>(entity =>
         {
             entity.Property(s => s.StudentCode).IsRequired().HasMaxLength(50);
-            entity.Property(s => s.Faculty).HasMaxLength(200);
             entity.Property(s => s.Major).HasMaxLength(200);
             entity.Property(s => s.WeakSubjects).HasMaxLength(500);
             entity.Property(s => s.LearningStyles).HasMaxLength(500);
+            entity.HasAlternateKey(s => s.UserId);
+            entity.HasIndex(s => s.UserId).IsUnique();
+
+            entity.HasOne(s => s.Faculty)
+                .WithMany(f => f.Students)
+                .HasForeignKey(s => s.FacultyId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<TutorProfile>(entity =>
@@ -60,16 +68,20 @@ public class AppDbContext : DbContext
             entity.Property(t => t.Expertise).HasMaxLength(500);
             entity.Property(t => t.TeachingMethod).HasMaxLength(500);
             entity.Property(t => t.CertificatesUrl).HasMaxLength(500);
+            entity.HasAlternateKey(t => t.UserId);
+            entity.HasIndex(t => t.UserId).IsUnique();
         });
 
         modelBuilder.Entity<Meeting>(entity =>
         {
             entity.Property(m => m.Title).IsRequired().HasMaxLength(200);
+            entity.Property(m => m.Description).HasMaxLength(2000);
             entity.Property(m => m.Mode).IsRequired();
             entity.Property(m => m.StartTime).IsRequired();
             entity.Property(m => m.EndTime).IsRequired();
             entity.Property(m => m.MinCapacity).IsRequired();
             entity.Property(m => m.MaxCapacity).IsRequired();
+            entity.Property(m => m.Location).HasMaxLength(500);
 
             entity.HasOne(m => m.Tutor)
                 .WithMany(u => u.TutorMeetings)
@@ -111,6 +123,7 @@ public class AppDbContext : DbContext
             entity.HasOne(p => p.Student)
                 .WithMany(s => s.ProgressRecords)
                 .HasForeignKey(p => p.StudentId)
+                .HasPrincipalKey(s => s.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -127,11 +140,13 @@ public class AppDbContext : DbContext
             entity.HasOne(f => f.Student)
                 .WithMany(s => s.Feedbacks)
                 .HasForeignKey(f => f.StudentId)
+                .HasPrincipalKey(s => s.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(f => f.Tutor)
                 .WithMany(t => t.Feedbacks)
                 .HasForeignKey(f => f.TutorId)
+                .HasPrincipalKey(t => t.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -167,6 +182,24 @@ public class AppDbContext : DbContext
                 .WithMany(u => u.Notifications)
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Faculty>(entity =>
+        {
+            entity.Property(f => f.Code).IsRequired().HasMaxLength(10);
+            entity.Property(f => f.Name).IsRequired().HasMaxLength(200);
+            entity.HasIndex(f => f.Code).IsUnique();
+        });
+
+        modelBuilder.Entity<Subject>(entity =>
+        {
+            entity.Property(s => s.Code).IsRequired().HasMaxLength(20);
+            entity.Property(s => s.Name).IsRequired().HasMaxLength(255);
+
+            entity.HasOne(s => s.Faculty)
+                .WithMany(f => f.Subjects)
+                .HasForeignKey(s => s.FacultyId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

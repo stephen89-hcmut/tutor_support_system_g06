@@ -6,7 +6,7 @@ public class TutorProfile : BaseEntity
 {
   public Guid UserId { get; set; }
   public string TutorCode { get; set; } = string.Empty;
-  public TutorType Type { get; set; } = TutorType.Instructor;
+  public TutorType Type { get; set; } = TutorType.Lecturer;
   public TutorStatus Status { get; set; } = TutorStatus.Pending;
   public string? Bio { get; set; }
   public string? Expertise { get; set; }

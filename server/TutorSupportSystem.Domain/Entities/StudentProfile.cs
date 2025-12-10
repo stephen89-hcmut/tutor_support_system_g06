@@ -4,7 +4,7 @@ public class StudentProfile : BaseEntity
 {
     public Guid UserId { get; set; }
     public string StudentCode { get; set; } = string.Empty;
-    public string Faculty { get; set; } = string.Empty;
+    public Guid FacultyId { get; set; }
     public string Major { get; set; } = string.Empty;
     public int EnrollmentYear { get; set; }
     public string? WeakSubjects { get; set; }
@@ -12,6 +12,7 @@ public class StudentProfile : BaseEntity
 
     // Navigation
     public User User { get; set; } = null!;
+    public virtual Faculty Faculty { get; set; } = null!;
     public ICollection<Participant> Participations { get; set; } = new List<Participant>();
     public ICollection<ProgressRecord> ProgressRecords { get; set; } = new List<ProgressRecord>();
     public ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();

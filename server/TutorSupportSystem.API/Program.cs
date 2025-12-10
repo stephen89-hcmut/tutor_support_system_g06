@@ -4,6 +4,7 @@ using TutorSupportSystem.Application.Interfaces;
 using TutorSupportSystem.Application.Services;
 using TutorSupportSystem.Domain.Repositories;
 using TutorSupportSystem.Infrastructure.Database;
+using TutorSupportSystem.Infrastructure.Data;
 using TutorSupportSystem.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,6 +46,13 @@ builder.Services.AddScoped<IMeetingService, MeetingService>();
 builder.Services.AddScoped<IAiMatchingService, AiMatchingService>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    context.Database.Migrate();
+    DbInitializer.Initialize(context);
+}
 
 // Always expose Swagger UI to make manual testing easy during development/runs
 app.UseSwagger();

@@ -5,9 +5,11 @@ namespace TutorSupportSystem.Domain.Entities;
 public class Meeting : BaseEntity
 {
     public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
     public MeetingMode Mode { get; set; }
+    public string? Location { get; set; }
     public Guid TutorId { get; set; }
     public int MinCapacity { get; set; }
     public int MaxCapacity { get; set; }
