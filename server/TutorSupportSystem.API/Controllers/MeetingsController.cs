@@ -179,4 +179,19 @@ public class MeetingsController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    [HttpGet("tutor/{tutorId}/students")]
+    [Authorize(Roles = "Tutor,Manager")]
+    public async Task<IActionResult> GetTutorStudents(string tutorId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var meetings = await _meetingService.GetTutorStudentsAsync(tutorId, cancellationToken);
+            return Ok(meetings);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 }

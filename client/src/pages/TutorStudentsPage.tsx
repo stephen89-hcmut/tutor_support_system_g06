@@ -1,35 +1,42 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRole } from '@/contexts/RoleContext';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  LinearProgress,
+  Stack,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
+  Avatar,
+  Divider,
+  MenuItem,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Search, MoreVertical } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { mockMeetings } from '@/data/mockMeetings';
-import { mockProgressRecords } from '@/data/mockProgress';
-import { mockStudents } from '@/data/mockStudents';
-import { useToast } from '@/components/ui/use-toast';
-import { RecordProgressModal } from '../components/RecordProgressModal';
+  FormControl,
+  InputLabel,
+  InputAdornment,
+} from '@mui/material';
+import Grid from '@mui/material/Grid';
+import { Search, Star, Edit, AlertTriangle, Eye } from 'lucide-react';
+import { studentService } from '@/application/services/studentService';
+import { meetingService } from '@/application/services/meetingService';
 import type { Meeting } from '@/domain/entities/meeting';
+import { mockProgressRecords } from '@/data/mockProgress';
 import type { ProgressRecord } from '@/domain/entities/progress';
 
 interface StudentWithProgress {
   studentId: string;
   studentName: string;
+  studentCode: string;
   email?: string;
   totalSessions: number;
   completedSessions: number;
@@ -40,493 +47,510 @@ interface StudentWithProgress {
   progressRecords: ProgressRecord[];
   status?: 'Active' | 'At Risk';
   department?: string;
+  weakSubjects?: string[];
+  learningStyle?: string;
 }
 
 interface TutorStudentsPageProps {
   onViewStudent?: (studentId: string) => void;
 }
 
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const days = ['CN', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+  const day = days[date.getDay()];
+  return `${day}, ${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+};
+
+const formatTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const endDate = new Date(date.getTime() + 2 * 60 * 60 * 1000);
+  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')} - ${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+};
+
+const StudentDetailModal: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  student: StudentWithProgress | null;
+}> = ({ open, onClose, student }) => {
+  const [activeTab, setActiveTab] = useState(0);
+
+  if (!student) return null;
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Avatar sx={{ width: 48, height: 48, bgcolor: 'primary.main' }}>
+            {student.studentName.charAt(0)}
+          </Avatar>
+          <Box>
+            <Typography variant="h6">{student.studentName}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              MSSV: {student.studentCode}
+            </Typography>
+          </Box>
+        </Stack>
+        <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+          {student.learningStyle && (
+            <Chip label={student.learningStyle} size="small" color="primary" variant="outlined" />
+          )}
+          {student.weakSubjects && student.weakSubjects.map((subject) => (
+            <Chip key={subject} label={`Yếu: ${subject}`} size="small" color="error" variant="outlined" />
+          ))}
+        </Stack>
+      </DialogTitle>
+      
+      <DialogContent dividers>
+        <Typography variant="subtitle2" gutterBottom>
+          Lịch sử buổi học ({student.meetings.length})
+        </Typography>
+
+        <Stack spacing={2} sx={{ mt: 2 }}>
+          {student.meetings.map((meeting) => {
+            const progress = student.progressRecords.find(p => p.sessionId === meeting.id);
+            const isCompleted = meeting.status === 'Completed';
+            const isUpcoming = meeting.status === 'Scheduled' || meeting.status === 'Confirmed';
+
+            return (
+              <Card key={meeting.id} variant="outlined">
+                <CardContent>
+                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle2">{meeting.topic}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {formatDate(meeting.date)} • {formatTime(meeting.time)}
+                      </Typography>
+                    </Box>
+                    <Chip 
+                      label={isCompleted ? 'Có mặt' : isUpcoming ? 'Đã đăng ký' : meeting.status} 
+                      size="small" 
+                      color={isCompleted ? 'success' : isUpcoming ? 'warning' : 'default'}
+                    />
+                  </Stack>
+
+                  {isCompleted && (
+                    <Box sx={{ mt: 2 }}>
+                      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
+                        <Tab label="ĐÁNH GIÁ CỦA BẠN" />
+                        <Tab label="PHẢN HỒI SINH VIÊN" />
+                      </Tabs>
+
+                      {activeTab === 0 && progress && (
+                        <Box sx={{ mt: 2 }}>
+                          <Stack spacing={2}>
+                            <Box>
+                              <Stack direction="row" justifyContent="space-between">
+                                <Typography variant="caption">Hiểu bài</Typography>
+                                <Typography variant="caption">{progress.understanding}/10</Typography>
+                              </Stack>
+                              <LinearProgress 
+                                variant="determinate" 
+                                value={(progress.understanding / 10) * 100} 
+                                sx={{ mt: 0.5 }}
+                              />
+                            </Box>
+                            <Box>
+                              <Stack direction="row" justifyContent="space-between">
+                                <Typography variant="caption">Thực hành</Typography>
+                                <Typography variant="caption">{progress.problemSolving}/10</Typography>
+                              </Stack>
+                              <LinearProgress 
+                                variant="determinate" 
+                                value={(progress.problemSolving / 10) * 100} 
+                                sx={{ mt: 0.5 }}
+                              />
+                            </Box>
+                            <Box>
+                              <Stack direction="row" justifyContent="space-between">
+                                <Typography variant="caption">Thái độ</Typography>
+                                <Typography variant="caption">{progress.participation}/10</Typography>
+                              </Stack>
+                              <LinearProgress 
+                                variant="determinate" 
+                                value={(progress.participation / 10) * 100} 
+                                sx={{ mt: 0.5 }}
+                              />
+                            </Box>
+
+                            <Divider />
+
+                            <Box>
+                              <Typography variant="caption" color="text.secondary">Nhận xét công khai</Typography>
+                              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                {progress.tutorComments || 'Em đã nắm được khái niệm gợi hạn cơ bản. Cần luyện tập thêm các dạng bài khó.'}
+                              </Typography>
+                            </Box>
+
+                            {progress.overallRating === 'Needs Improvement' && (
+                              <Box sx={{ p: 1.5, bgcolor: 'warning.light', borderRadius: 1, display: 'flex', gap: 1 }}>
+                                <AlertTriangle size={18} color="orange" />
+                                <Box>
+                                  <Typography variant="body2" fontWeight="medium" color="warning.dark">
+                                    Cần cải thiện (Rất kém trừu)
+                                  </Typography>
+                                  <Typography variant="caption" color="warning.dark">
+                                    {progress.tutorComments || 'Học sinh cần tập trung hơn'}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            )}
+
+                            <Button variant="outlined" startIcon={<Edit size={16} />} size="small">
+                              Chỉnh sửa
+                            </Button>
+                          </Stack>
+                        </Box>
+                      )}
+
+                      {activeTab === 1 && meeting.studentRating && (
+                        <Box sx={{ mt: 2 }}>
+                          <Stack direction="row" spacing={0.5} alignItems="center">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star 
+                                key={star} 
+                                size={20} 
+                                fill={star <= (meeting.studentRating?.knowledge || 0) ? 'orange' : 'none'}
+                                color="orange"
+                              />
+                            ))}
+                            <Typography variant="body2" sx={{ ml: 1 }}>
+                              ({meeting.studentRating.knowledge}/5)
+                            </Typography>
+                          </Stack>
+                          <Typography variant="body2" sx={{ mt: 1 }}>
+                            {meeting.studentRating.comment || '"Thầy giảng rất hay và dễ hiểu. Em cảm ơn thầy!"'}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                            Đánh giá ngày {meeting.studentRating.submittedAt ? new Date(meeting.studentRating.submittedAt).toLocaleDateString('vi-VN') : '18/01/2024'}
+                          </Typography>
+                          <Button variant="text" size="small" sx={{ mt: 1 }}>
+                            Trả lời
+                          </Button>
+                        </Box>
+                      )}
+
+                      {activeTab === 1 && !meeting.studentRating && (
+                        <Box sx={{ mt: 2, textAlign: 'center', py: 3 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Đang chờ đánh giá từ sinh viên
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+
+                  {!isCompleted && !progress && (
+                    <Box sx={{ mt: 2, textAlign: 'center' }}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Chưa có đánh giá
+                      </Typography>
+                      <Button variant="outlined" size="small" startIcon={<Edit size={16} />}>
+                        Ghi nhận tiến độ ngay
+                      </Button>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </Stack>
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={onClose}>Đóng</Button>
+        <Button variant="contained" startIcon={<Eye size={16} />}>
+          Xem hồ sơ đầy đủ
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 export function TutorStudentsPage({ onViewStudent }: TutorStudentsPageProps = {}) {
-  console.log('TutorStudentsPage rendering');
   const { userId } = useRole();
-  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'All Status' | 'Active' | 'At Risk'>('All Status');
-  const [showRecordModal, setShowRecordModal] = useState(false);
-  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+  const [subjectFilter, setSubjectFilter] = useState('all');
   const [students, setStudents] = useState<StudentWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<StudentWithProgress | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
-  // Load data on mount
   useEffect(() => {
     const tutorId = userId;
     if (!tutorId) {
-      console.warn('No tutorId available');
       setLoading(false);
       return;
     }
 
-    console.log('Loading students for tutor:', tutorId);
-    // Get all meetings for this tutor
-    const tutorMeetings = mockMeetings.filter(m => m.tutorId === tutorId);
-    console.log('Found meetings:', tutorMeetings.length);
+    let mounted = true;
 
-    // Group by student
-    const studentMap = new Map<string, StudentWithProgress>();
-
-    tutorMeetings.forEach(meeting => {
-      if (!studentMap.has(meeting.studentId)) {
-        // Tìm dữ liệu student từ mockStudents
-        const studentData = mockStudents.find(s => s.id === meeting.studentId);
+    const loadStudents = async () => {
+      try {
+        console.log('Loading students for tutor:', tutorId);
         
-        const studentProgress = mockProgressRecords.filter(
-          p => p.studentId === meeting.studentId && p.tutorId === tutorId
+        // Get students from API
+        const apiStudents = await studentService.getTutorStudents(tutorId);
+        console.log('API returned students:', apiStudents.length);
+        
+        // Get meetings for each student to get full data
+        const studentsWithDetails = await Promise.all(
+          apiStudents.map(async (apiStudent) => {
+            try {
+              // Get meetings for this student-tutor pair
+              const allMeetings = await meetingService.getAll();
+              const studentMeetings = allMeetings.filter(
+                m => m.studentId === apiStudent.studentId && m.tutorId === tutorId
+              );
+              
+              // Get progress records
+              const studentProgress = mockProgressRecords.filter(
+                p => p.studentId === apiStudent.studentId && p.tutorId === tutorId
+              );
+
+              // Calculate avg rating from progress records
+              const avgRating = studentProgress.length > 0
+                ? studentProgress.reduce((sum, p) => {
+                    const rating = p.overallRating === 'Excellent' ? 5 : 
+                                   p.overallRating === 'Good' ? 4 : 
+                                   p.overallRating === 'Needs Improvement' ? 2 : 3;
+                    return sum + rating;
+                  }, 0) / studentProgress.length
+                : 0;
+
+              return {
+                ...apiStudent,
+                meetings: studentMeetings,
+                progressRecords: studentProgress,
+                avgRating,
+                weakSubjects: ['Giải tích 1'], // TODO: Get from API
+                learningStyle: 'Visual', // TODO: Get from API
+                status: 'Active' as const,
+              };
+            } catch (err) {
+              console.error('Error loading details for student:', apiStudent.studentId, err);
+              return {
+                ...apiStudent,
+                meetings: [],
+                progressRecords: [],
+                avgRating: 0,
+                weakSubjects: [],
+                learningStyle: 'Visual',
+                status: 'Active' as const,
+              };
+            }
+          })
         );
 
-        const avgRating =
-          studentProgress.length > 0
-            ? studentProgress.reduce((sum, p) => {
-                const rating = (p as any).studentRating || 0;
-                return sum + rating;
-              }, 0) / studentProgress.length
-            : 0;
-
-        studentMap.set(meeting.studentId, {
-          studentId: meeting.studentId,
-          studentName: studentData?.name || meeting.studentName,
-          email: studentData?.email,
-          totalSessions: 0,
-          completedSessions: 0,
-          upcomingSessions: 0,
-          avgRating,
-          meetings: [],
-          progressRecords: studentProgress,
-          status: 'Active', // Sẽ cập nhật sau khi tính xong
-          department: studentData?.personalInfo?.major || 'Computer Science',
-        });
+        if (!mounted) return;
+        
+        console.log('Loaded students with details:', studentsWithDetails.length);
+        setStudents(studentsWithDetails);
+      } catch (error) {
+        console.error('Failed to load tutor students:', error);
+        if (!mounted) return;
+        // Set error message
+        const errorMessage = error instanceof Error ? error.message : 'Không thể tải danh sách học viên';
+        setError(errorMessage);
+        setStudents([]);
+      } finally {
+        if (mounted) setLoading(false);
       }
+    };
 
-      const student = studentMap.get(meeting.studentId)!;
-      student.meetings.push(meeting);
-      student.totalSessions++;
-
-      if (meeting.status === 'Completed') {
-        student.completedSessions++;
-        student.latestSession = meeting.date;
-      } else if (meeting.status === 'Scheduled') {
-        student.upcomingSessions++;
-      }
-    });
-
-    const studentsArray = Array.from(studentMap.values());
+    loadStudents();
     
-    // Calculate status based on completion rate
-    studentsArray.forEach(student => {
-      const completionRate = student.totalSessions > 0 
-        ? (student.completedSessions / student.totalSessions) * 100 
-        : 0;
-      student.status = completionRate < 60 ? 'At Risk' : 'Active';
-    });
-    
-    console.log('Students loaded:', studentsArray.length, 'students');
-    if (studentsArray.length > 0) {
-      console.log('First student:', studentsArray[0].studentName, 'Sessions:', studentsArray[0].totalSessions);
-    }
-    setStudents(studentsArray);
-    console.log('Students loaded:', Array.from(studentMap.values()).length);
-    setLoading(false);
+    return () => { mounted = false; };
   }, [userId]);
 
   const filteredStudents = useMemo(() => {
     let result = students;
     
-    // Filter by search term (name, email, or student ID)
     if (searchTerm) {
       result = result.filter(s =>
         s.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.studentId.toLowerCase().includes(searchTerm.toLowerCase())
+        s.studentCode.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
-    // Filter by status
-    if (statusFilter !== 'All Status') {
-      result = result.filter(s => s.status === statusFilter);
+    if (subjectFilter !== 'all') {
+      // Filter by subject if needed
     }
     
     return result;
-  }, [students, searchTerm, statusFilter]);
+  }, [students, searchTerm, subjectFilter]);
 
-  const handleRecordProgress = (meeting: Meeting) => {
-    // Only allow recording for completed meetings
-    if (meeting.status !== 'Completed') {
-      toast({ title: 'Cannot record', description: 'Only completed meetings can have progress recorded.' });
-      return;
-    }
+  const totalStudents = students.length;
+  const totalCompletedSessions = students.reduce((sum, s) => sum + s.completedSessions, 0);
+  const avgRating = students.length > 0 
+    ? (students.reduce((sum, s) => sum + s.avgRating, 0) / students.length).toFixed(1)
+    : '0.0';
 
-    // Check if already has progress record
-    const exists = mockProgressRecords.find(
-      p => p.sessionId === meeting.id && p.sessionDate === meeting.date
-    );
-    if (exists) {
-      toast({ title: 'Already recorded', description: 'Progress for this session has already been recorded.' });
-      return;
-    }
-
-    setSelectedMeeting(meeting);
-    setShowRecordModal(true);
-  };
-
-  const handleRecordSave = async (data: Partial<ProgressRecord>) => {
-    if (!selectedMeeting) return;
-
-    try {
-      // Create new progress record
-      const newRecord: ProgressRecord = {
-        recordId: `pr-${selectedMeeting.id}`,
-        studentId: selectedMeeting.studentId,
-        sessionId: selectedMeeting.id,
-        sessionDate: selectedMeeting.date,
-        tutorId: selectedMeeting.tutorId,
-        tutorName: selectedMeeting.tutorName,
-        topic: selectedMeeting.topic,
-        attendance: data.attendance || 'Present',
-        absenceReason: data.absenceReason,
-        understanding: data.understanding || 0,
-        problemSolving: data.problemSolving || 0,
-        codeQuality: data.codeQuality || 0,
-        participation: data.participation || 0,
-        overallRating: data.overallRating || 'Good',
-        tutorComments: data.tutorComments || '',
-        privateNote: data.privateNote,
-        createdAt: new Date().toISOString(),
-        createdBy: selectedMeeting.tutorId,
-      };
-
-      // Add to mock data
-      mockProgressRecords.push(newRecord);
-
-      // Close modal and refresh
-      setShowRecordModal(false);
-      setSelectedMeeting(null);
-
-      // Refresh student list
-      const tutorId = userId;
-      if (tutorId) {
-        const tutorMeetings = mockMeetings.filter(m => m.tutorId === tutorId);
-        const studentMap = new Map<string, StudentWithProgress>();
-
-        tutorMeetings.forEach(meeting => {
-          if (!studentMap.has(meeting.studentId)) {
-            // Tìm dữ liệu student từ mockStudents
-            const studentData = mockStudents.find(s => s.id === meeting.studentId);
-            
-            const studentProgress = mockProgressRecords.filter(
-              p => p.studentId === meeting.studentId && p.tutorId === tutorId
-            );
-
-            const avgRating =
-              studentProgress.length > 0
-                ? studentProgress.reduce((sum, p) => {
-                    const rating = (p as any).studentRating || 0;
-                    return sum + rating;
-                  }, 0) / studentProgress.length
-                : 0;
-
-            studentMap.set(meeting.studentId, {
-              studentId: meeting.studentId,
-              studentName: studentData?.name || meeting.studentName,
-              email: studentData?.email,
-              totalSessions: 0,
-              completedSessions: 0,
-              upcomingSessions: 0,
-              avgRating,
-              meetings: [],
-              progressRecords: studentProgress,
-              status: 'Active',
-              department: studentData?.personalInfo?.major || 'Computer Science',
-            });
-          }
-
-          const student = studentMap.get(meeting.studentId)!;
-          student.meetings.push(meeting);
-          student.totalSessions++;
-
-          if (meeting.status === 'Completed') {
-            student.completedSessions++;
-            student.latestSession = meeting.date;
-          } else if (meeting.status === 'Scheduled') {
-            student.upcomingSessions++;
-          }
-        });
-
-        const updatedStudents = Array.from(studentMap.values());
-        // Calculate status based on completion rate
-        updatedStudents.forEach(student => {
-          const completionRate = student.totalSessions > 0 
-            ? (student.completedSessions / student.totalSessions) * 100 
-            : 0;
-          student.status = completionRate < 60 ? 'At Risk' : 'Active';
-        });
-        
-        setStudents(updatedStudents);
-      }
-
-      toast({ title: 'Success', description: 'Progress recorded successfully.' });
-    } catch (err) {
-      console.error(err);
-      toast({ title: 'Error', description: 'Failed to save progress.' });
-    }
+  const handleViewDetail = (student: StudentWithProgress) => {
+    setSelectedStudent(student);
+    setModalOpen(true);
   };
 
   if (loading) {
-    return <div className="p-6 text-center text-muted-foreground">Loading students...</div>;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400, flexDirection: 'column', gap: 2 }}>
+        <CircularProgress />
+        <Typography>Đang tải danh sách học viên...</Typography>
+      </Box>
+    );
   }
 
-  console.log('Rendering with students:', students.length, 'filtered:', filteredStudents.length);
-
-  // Calculate stats
-  const activeStudents = students.filter(s => s.status === 'Active').length;
-  const atRiskStudents = students.filter(s => s.status === 'At Risk').length;
-  const avgRating = students.length > 0 
-    ? (students.reduce((sum, s) => sum + s.avgRating, 0) / students.length).toFixed(1)
-    : 0;
-
-  // Helper to get initials from name
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
-  };
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography color="error" gutterBottom>{error}</Typography>
+        <Button onClick={() => window.location.reload()}>Thử lại</Button>
+      </Box>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">My Students</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage and track your students' progress</p>
-        </div>
-        <Button variant="outline">
-          ↓ Export All
-        </Button>
-      </div>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom>Học viên của tôi</Typography>
+      <Typography variant="body2" color="text.secondary" gutterBottom>
+        Quản lý và theo dõi tiến độ học tập của sinh viên
+      </Typography>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Total Students</p>
-                <p className="text-3xl font-bold">{students.length}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-xl">👥</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Active Students</p>
-                <p className="text-3xl font-bold text-green-600">{activeStudents}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-xl">📈</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">At Risk</p>
-                <p className="text-3xl font-bold text-yellow-600">{atRiskStudents}</p>
-              </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <span className="text-xl">⚠️</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Avg Rating</p>
-                <p className="text-3xl font-bold">{avgRating}</p>
-              </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <span className="text-xl">⭐</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, student ID, or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        <div className="flex gap-4">
-          <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All Status">All Status</SelectItem>
-              <SelectItem value="Active">Active</SelectItem>
-              <SelectItem value="At Risk">At Risk</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Students List */}
-      <div className="space-y-3">
-        {filteredStudents.length === 0 ? (
+      <Grid container spacing={2} sx={{ mt: 2, mb: 3 }}>
+        <Grid xs={12} md={4}>
           <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
-              No students found.
+            <CardContent>
+              <Typography variant="h4" color="primary.main">{totalStudents}</Typography>
+              <Typography variant="body2" color="text.secondary">Tổng số học viên</Typography>
             </CardContent>
           </Card>
-        ) : (
-          filteredStudents.map(student => {
-            const completionRate = student.totalSessions > 0 
-              ? (student.completedSessions / student.totalSessions) * 100 
-              : 0;
-            
-            return (
-              <Card 
-                key={student.studentId} 
-                className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => onViewStudent?.(student.studentId)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4 justify-between">
-                    {/* Left: Avatar and Info */}
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
-                        {getInitials(student.studentName)}
-                      </div>
+        </Grid>
+        <Grid xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h4" color="success.main">{totalCompletedSessions}</Typography>
+              <Typography variant="body2" color="text.secondary">Buổi học hoàn thành</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h4" color="warning.main">{avgRating}</Typography>
+              <Typography variant="body2" color="text.secondary">Đánh giá trung bình</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-sm">{student.studentName}</h3>
-                          <Badge 
-                            variant="outline" 
-                            className={student.status === 'Active' 
-                              ? 'bg-green-100 text-green-700 border-green-300' 
-                              : 'bg-yellow-100 text-yellow-700 border-yellow-300'
-                            }
-                          >
-                            {student.status}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {student.studentId} • {student.email || 'N/A'} • {student.department || 'N/A'}
-                        </p>
-                      </div>
-                    </div>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid xs={12} md={8}>
+          <TextField
+            fullWidth
+            placeholder="Tìm kiếm theo tên hoặc MSSV..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={20} />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Grid>
+        <Grid xs={12} md={4}>
+          <FormControl fullWidth>
+            <InputLabel>Môn học</InputLabel>
+            <Select value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)} label="Môn học">
+              <MenuItem value="all">Tất cả</MenuItem>
+              <MenuItem value="calculus">Giải tích</MenuItem>
+              <MenuItem value="algebra">Đại số</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
 
-                    {/* Middle: Sessions and Rating */}
-                    <div className="flex items-center gap-6 text-center">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Sessions</p>
-                        <p className="text-lg font-bold">{student.completedSessions}/{student.totalSessions}</p>
-                      </div>
+      <Grid container spacing={2}>
+        {filteredStudents.map((student) => (
+          <Grid xs={12} md={6} lg={4} key={student.studentId}>
+            <Card>
+              <CardContent>
+                <Stack direction="row" spacing={2} alignItems="flex-start">
+                  <Avatar sx={{ width: 48, height: 48, bgcolor: 'primary.main' }}>
+                    {student.studentName.charAt(0)}
+                  </Avatar>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle1" fontWeight="medium">
+                      {student.studentName}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      MSSV: {student.studentCode}
+                    </Typography>
+                  </Box>
+                </Stack>
 
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Rating</p>
-                        <div className="flex items-center gap-1 justify-center">
-                          <span className="text-yellow-500">⭐</span>
-                          <span className="font-bold">{student.avgRating.toFixed(1)}</span>
-                        </div>
-                      </div>
-                    </div>
+                <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
+                  {student.learningStyle && (
+                    <Chip label={student.learningStyle} size="small" color="primary" variant="outlined" />
+                  )}
+                  {student.weakSubjects && student.weakSubjects.map((subject) => (
+                    <Chip key={subject} label={`Yếu: ${subject}`} size="small" color="error" />
+                  ))}
+                </Stack>
 
-                    {/* Right: Progress and Last Session */}
-                    <div className="flex items-center gap-6 flex-1 justify-end">
-                      <div className="w-32">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium">Progress</span>
-                          <span className="text-xs text-muted-foreground">{completionRate.toFixed(0)}%</span>
-                        </div>
-                        <Progress value={completionRate} className="h-2" />
-                      </div>
+                <Box sx={{ mt: 2 }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="caption">Tiến độ</Typography>
+                    <Typography variant="caption">{student.completedSessions}/{student.totalSessions} buổi</Typography>
+                  </Stack>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={(student.completedSessions / student.totalSessions) * 100} 
+                    sx={{ mt: 0.5 }}
+                  />
+                </Box>
 
-                      <div className="text-center">
-                        <p className="text-xs text-muted-foreground mb-1">Last Session</p>
-                        <p className="text-sm font-semibold">{student.latestSession ? student.latestSession.slice(5) : 'N/A'}</p>
-                      </div>
+                <Stack direction="row" justifyContent="space-between" sx={{ mt: 2 }}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Star size={16} fill="orange" color="orange" />
+                    <Typography variant="body2">{student.avgRating.toFixed(1)}</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography variant="caption" color="text.secondary">Hoàn thành</Typography>
+                    <Typography variant="body2">{student.completedSessions}</Typography>
+                  </Stack>
+                </Stack>
 
-                      {/* Action Menu */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="ghost" onClick={(e) => e.stopPropagation()}>
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {student.meetings
-                            .filter(m => m.status === 'Completed')
-                            .slice(0, 3)
-                            .map(meeting => {
-                              const hasProgress = mockProgressRecords.some(
-                                p => p.sessionId === meeting.id && p.sessionDate === meeting.date
-                              );
-                              return (
-                                <DropdownMenuItem
-                                  key={meeting.id}
-                                  onClick={() => handleRecordProgress(meeting)}
-                                  disabled={hasProgress}
-                                >
-                                  {hasProgress ? '✓ ' : ''}
-                                  {meeting.date.slice(5)} - {meeting.topic.split(' - ')[0]}
-                                </DropdownMenuItem>
-                              );
-                            })}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
+                <Button 
+                  fullWidth 
+                  variant="outlined" 
+                  sx={{ mt: 2 }}
+                  startIcon={<Eye size={16} />}
+                  onClick={() => handleViewDetail(student)}
+                >
+                  Xem chi tiết
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+
+        {filteredStudents.length === 0 && (
+          <Grid xs={12}>
+            <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
+              Không tìm thấy học viên nào
+            </Typography>
+          </Grid>
         )}
-      </div>
+      </Grid>
 
-      {/* Record Progress Modal */}
-      {showRecordModal && selectedMeeting && (
-        <RecordProgressModal
-          meeting={selectedMeeting}
-          onSave={handleRecordSave}
-          onCancel={() => {
-            setShowRecordModal(false);
-            setSelectedMeeting(null);
-          }}
-        />
-      )}
-    </div>
+      <StudentDetailModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        student={selectedStudent}
+      />
+    </Box>
   );
 }
-
-export default TutorStudentsPage;

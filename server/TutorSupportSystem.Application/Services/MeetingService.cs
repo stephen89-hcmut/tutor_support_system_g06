@@ -363,6 +363,25 @@ public class MeetingService : IMeetingService
         return MapToDto(meeting);
     }
 
+    public async Task<IReadOnlyList<MeetingDto>> GetTutorStudentsAsync(string tutorId, CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(tutorId, out var tutorGuid))
+        {
+            throw new InvalidOperationException("Invalid tutor ID format.");
+        }
+
+        // Get all meetings for this tutor that have participants
+        var meetings = await _unitOfWork.Meetings.FindAsync(
+            m => m.TutorId == tutorGuid && m.CurrentCount > 0,
+            cancellationToken);
+
+        // Return meetings that have students joined
+        return meetings
+            .OrderByDescending(m => m.StartTime)
+            .Select(MapToDto)
+            .ToList();
+    }
+
     private static bool IsOverlapping(DateTime startA, DateTime endA, DateTime startB, DateTime endB)
     {
         return startA < endB && endA > startB;

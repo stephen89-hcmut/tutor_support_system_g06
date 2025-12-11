@@ -8,8 +8,9 @@ import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
 import { Button } from './components/ui/button';
 import { StudentManagementPage } from './pages/StudentManagementPage';
 import { StudentDetailPage } from './pages/StudentDetailPageNew';
-import { MeetingsPage } from './pages/MeetingsPage';
-import { MeetingManagementPage } from './pages/MeetingManagementPage';
+import { StudentMeetingPage } from './pages/StudentMeetingPage';
+import { TutorMeetingPage } from './pages/TutorMeetingPage';
+import { ManagerMeetingPage } from './pages/ManagerMeetingPage';
 import { DocumentLibraryPage } from './pages/DocumentLibraryPage';
 import { TutorProfilePage } from './pages/TutorProfilePage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -23,7 +24,6 @@ import { RecordProgressPage } from './pages/RecordProgressPage';
 import { RecordProgressPageNew } from './pages/RecordProgressPageNew';
 import { DashboardPage } from './pages/DashboardPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { MeetingPage } from './pages/MeetingPage';
 import { StudentAnalyticsPage } from './pages/StudentAnalyticsPage';
 import { TutorStudentsPage } from './pages/TutorStudentsPage';
 import { meetingService } from '@/application/services/meetingService';
@@ -239,12 +239,24 @@ function App() {
 
     // Handle meetings screen
     if (currentScreen === 'meetings') {
-      return (
-        <MeetingsPage
-          onCancel={handleCancelMeeting}
-          onBookNewMeeting={() => setCurrentScreen('book-meeting')}
-        />
-      );
+      if (role === 'Student') {
+        return (
+          <StudentMeetingPage
+            onCancel={handleCancelMeeting}
+            onBookNewMeeting={() => setCurrentScreen('book-meeting')}
+          />
+        );
+      }
+      if (role === 'Tutor') {
+        return (
+          <TutorMeetingPage
+            onCancel={handleCancelMeeting}
+          />
+        );
+      }
+      // Manager fallback to dashboard
+      setCurrentScreen('dashboard');
+      return <DashboardPage onNavigate={handleNavigate} />;
     }
 
     // Handle library screen
@@ -252,7 +264,7 @@ function App() {
       return <DocumentLibraryPage />;
     }
 
-    // Handle meeting discovery screen (Student only)
+    // Handle book meeting screen (Student only) - use existing BookMeetingPage
     if (currentScreen === 'find-tutor' || currentScreen === 'book-meeting') {
       if (role !== 'Student') {
         return (
@@ -269,20 +281,19 @@ function App() {
           </div>
         );
       }
+      // Use BookMeetingPage instead of removed MeetingPage
       return (
-        <MeetingPage
-          onViewTutorProfile={(tutorId) => {
-            setCurrentStudentId(tutorId); // Reuse for tutor ID
-            setPreviousScreen(currentScreen);
-            setCurrentScreen('tutorProfile');
-          }}
-          onBookingSuccess={() => {
-            setCurrentScreen('meetings');
-          }}
-        />
+        <div className="p-4">
+          <Typography variant="h5" gutterBottom>Find Tutor & Book Meeting</Typography>
+          <Typography variant="body2" color="text.secondary">
+            This feature is under development. Please check back later.
+          </Typography>
+          <Button onClick={() => setCurrentScreen('meetings')} sx={{ mt: 2 }}>
+            Back to Meetings
+          </Button>
+        </div>
       );
     }
-
 
     // Handle tutor profile screen
     if (currentScreen === 'tutorProfile' && currentStudentId) {
@@ -394,14 +405,14 @@ function App() {
       );
     }
 
-    // Handle students list screen (only for Manager)
+    // Handle meetings management screen (only for Manager)
     if (currentScreen === 'manage-meetings') {
       if (role !== 'Manager') {
         setCurrentScreen('dashboard');
         return <DashboardPage onNavigate={handleNavigate} />;
       }
       return (
-        <MeetingManagementPage
+        <ManagerMeetingPage
           onBack={() => setCurrentScreen('dashboard')}
         />
       );

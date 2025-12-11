@@ -92,15 +92,18 @@ class MeetingService {
 
   async schedule(meeting: Meeting): Promise<Meeting> {
     const session = authService.getSession();
+    // Meeting object phải có endTime trong metadata hoặc tính toán từ time + duration
+    const endTime = (meeting as any).endTime || meeting.time;
     const dto = await meetingApi.createMeeting(
       {
         subject: meeting.topic,
         startTime: meeting.time,
-        endTime: meeting.time,
+        endTime: endTime,
         mode: meeting.mode === 'In-Person' ? 'InPerson' : 'Online',
         link: meeting.link,
         location: meeting.location,
         tutorId: meeting.tutorId,
+        maxCapacity: meeting.maxCapacity,
       },
       session,
     );

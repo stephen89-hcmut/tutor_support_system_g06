@@ -16,4 +16,5 @@ public interface IMeetingService
     Task SubmitAttendanceAsync(Guid meetingId, List<AttendanceEntry> attendance, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<MeetingDto>> GetMyMeetingsAsync(CancellationToken cancellationToken = default);
     Task<MeetingDto> GetMeetingByIdAsync(Guid meetingId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<MeetingDto>> GetTutorStudentsAsync(string tutorId, CancellationToken cancellationToken = default);
 }

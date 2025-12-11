@@ -29,6 +29,7 @@ export const meetingApi = {
     link?: string;
     location?: string;
     tutorId: string;
+    maxCapacity?: number;
   }, session: AuthSession | null): Promise<MeetingDto> => {
     return httpClient.post<MeetingDto, typeof payload>('/Meetings', payload, authToken(session));
   },
@@ -39,5 +40,10 @@ export const meetingApi = {
 
   finishMeeting: async (id: string, session: AuthSession | null): Promise<void> => {
     await httpClient.patch<void, Record<string, never>>(`/Meetings/${id}/finish`, {}, authToken(session));
+  },
+
+  // Get students who have joined meetings with a specific tutor
+  getTutorStudents: async (tutorId: string, session: AuthSession | null): Promise<MeetingDto[]> => {
+    return httpClient.get<MeetingDto[]>(`/Meetings/tutor/${tutorId}/students`, authToken(session));
   },
 };
