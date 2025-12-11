@@ -8,17 +8,31 @@ import type { MeetingDto } from '@/types/meeting';
 const toMeeting = (dto: MeetingDto, session: AuthSession | null): Meeting => {
   const start = new Date(dto.startTime);
 
+  const modeMap: Record<string, Meeting['mode']> = {
+    Online: 'Zoom',
+    InPerson: 'In-Person',
+    'In-Person': 'In-Person',
+    Zoom: 'Zoom',
+    Teams: 'Teams',
+  };
+
   const statusMap: Record<string, Meeting['status']> = {
-    Open: 'Scheduled',
-    Full: 'Scheduled',
+    Open: 'Open',
+    Full: 'Full',
+    Confirmed: 'Confirmed',
     Completed: 'Completed',
+    InProgress: 'In Progress',
     Started: 'In Progress',
+    Scheduled: 'Scheduled',
     CancelledByTutor: 'Cancelled',
     CancelledBySystem: 'Cancelled',
     CancelledByStudent: 'Cancelled',
   };
 
   const isStudent = session?.role === 'Student';
+
+  const ratingValue = (dto as any).rating ?? (dto as any).studentRating ?? (dto as any).feedbackRating;
+  const ratingComment = (dto as any).comment ?? (dto as any).feedbackComment;
 
   return {
     id: dto.id,
@@ -30,10 +44,22 @@ const toMeeting = (dto: MeetingDto, session: AuthSession | null): Meeting => {
     tutorId: dto.tutorId,
     tutorName: dto.tutorName,
     topic: dto.subject,
-    mode: dto.mode === 'Online' ? 'Zoom' : 'In-Person',
+    mode: modeMap[dto.mode] ?? 'Zoom',
     location: dto.location ?? dto.link,
     link: dto.link,
     status: statusMap[dto.status] ?? 'Scheduled',
+    currentCount: dto.currentCount ?? 0,
+    maxCapacity: dto.maxCapacity ?? 0,
+    studentRating: typeof ratingValue === 'number'
+      ? {
+          knowledge: ratingValue,
+          communication: ratingValue,
+          helpfulness: ratingValue,
+          punctuality: ratingValue,
+          comment: ratingComment,
+          submittedAt: (dto as any).ratingDate,
+        }
+      : undefined,
   };
 };
 
@@ -47,7 +73,7 @@ class MeetingService {
   async getById(meetingId: string): Promise<Meeting | undefined> {
     const session = authService.getSession();
     const dto = await meetingApi.getMeetingById(meetingId, session);
-    return toMeeting(dto);
+    return toMeeting(dto, session);
   }
 
   async getByTutor(tutorId: string): Promise<Meeting[]> {
@@ -78,7 +104,7 @@ class MeetingService {
       },
       session,
     );
-    return toMeeting(dto);
+    return toMeeting(dto, session);
   }
 
   async update(meetingId: string, update: Partial<Meeting>): Promise<Meeting | undefined> {

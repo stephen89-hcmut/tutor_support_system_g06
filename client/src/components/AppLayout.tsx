@@ -43,15 +43,15 @@ interface MenuItem {
 const menuItemsByRole: Record<string, MenuItem[]> = {
   Student: [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'find-tutor', label: 'Find Tutor', icon: Search },
-    { id: 'meetings', label: 'My Schedule', icon: Calendar },
-    { id: 'my-progress', label: 'Learning Progress', icon: TrendingUp },
+    { id: 'find-tutor', label: 'Meetings', icon: Search },
+    { id: 'meetings', label: 'Schedules', icon: Calendar },
+    { id: 'my-progress', label: 'Progress', icon: TrendingUp },
     { id: 'library', label: 'Documents', icon: BookOpen },
     { id: 'profile', label: 'Profile', icon: User },
   ],
   Tutor: [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'meetings', label: 'My Schedule', icon: Calendar },
+    { id: 'meetings', label: 'Schedules', icon: Calendar },
     { id: 'students', label: 'My Students', icon: Users },
     { id: 'feedback', label: 'Feedback Analysis', icon: PieChart },
     { id: 'library', label: 'Documents', icon: Folder },

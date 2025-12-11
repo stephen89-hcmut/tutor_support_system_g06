@@ -23,8 +23,9 @@ import {
   BarChart3,
   Bell,
   Sparkles,
-  Activity,
   Shield,
+  MapPin,
+  Video,
 } from 'lucide-react';
 import type { Meeting } from '@/domain/entities/meeting';
 import { meetingService } from '@/application/services/meetingService';
@@ -36,7 +37,7 @@ interface DashboardPageProps {
 }
 
 export function DashboardPage({ onNavigate }: DashboardPageProps) {
-  const { role, userId } = useRole();
+  const { role, userId, userName } = useRole();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +77,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
 
   // Calculate summary statistics
   const stats = useMemo(() => {
-    const upcoming = meetings.filter((m) => m.status === 'Scheduled').length;
+    const upcoming = meetings.filter((m) => m.status === 'Confirmed').length;
     const total = meetings.length;
     const completed = meetings.filter((m) => m.status === 'Completed').length;
     const activeTutors = new Set(meetings.map((m) => m.tutorId)).size;
@@ -99,7 +100,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       const dayDate = weekDays[index];
       const dayStr = format(dayDate, 'yyyy-MM-dd');
       const count = meetings.filter(
-        (m) => m.date === dayStr && m.status === 'Scheduled',
+        (m) => m.date === dayStr && m.status === 'Confirmed',
       ).length;
       
       return {
@@ -133,6 +134,28 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     return months;
   }, [meetings]);
 
+  const getMeetingStart = (m: Meeting) => {
+    if (m.time) {
+      const parsed = new Date(m.time);
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+    if (m.date) {
+      const parsed = new Date(m.date);
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+    return null;
+  };
+
+  const formatMeetingDate = (m: Meeting) => {
+    const start = getMeetingStart(m);
+    return start ? start.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : m.date;
+  };
+
+  const formatMeetingTime = (m: Meeting) => {
+    const start = getMeetingStart(m);
+    return start ? start.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : m.time;
+  };
+
   // Recent Meetings (Last 5, sorted by date)
   const recentMeetings = useMemo(() => {
     return [...meetings]
@@ -141,9 +164,14 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
   }, [meetings]);
 
   const nextMeeting = useMemo(() => {
+    const upcomingStatuses: Meeting['status'][] = ['Open', 'Full', 'Scheduled', 'Confirmed', 'In Progress'];
     return [...meetings]
-      .filter((m) => m.status === 'Scheduled')
-      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())[0];
+      .filter((m) => upcomingStatuses.includes(m.status))
+      .sort((a, b) => {
+        const aStart = getMeetingStart(a)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        const bStart = getMeetingStart(b)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        return aStart - bStart;
+      })[0];
   }, [meetings]);
 
   const getRatingColor = (status: string) => {
@@ -171,7 +199,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     if (role === 'Student') {
       return (
         <>
-          <h1 className="text-3xl font-bold mb-2">Chào bạn, chúc học tốt hôm nay!</h1>
+          <h1 className="text-3xl font-bold mb-2">Chào {userName || 'bạn'}, chúc học tốt hôm nay!</h1>
           <p className="text-muted-foreground">Kiểm tra lịch sắp tới, đồng bộ dữ liệu và xem gợi ý Tutor phù hợp.</p>
         </>
       );
@@ -306,15 +334,22 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
             <CardContent>
               {nextMeeting ? (
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  <div>
+                  <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">{nextMeeting.topic}</p>
-                    <h3 className="text-xl font-semibold">Tutor: {nextMeeting.tutorName}</h3>
+                    <h3 className="text-xl font-semibold">Tutor: {nextMeeting.tutorName || 'N/A'}</h3>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      {nextMeeting.mode === 'In-Person' ? <MapPin className="h-4 w-4" /> : <Video className="h-4 w-4" />}
+                      <span>{nextMeeting.mode === 'In-Person' ? nextMeeting.location || 'Offline' : nextMeeting.mode}</span>
+                    </div>
                     <p className="text-sm text-muted-foreground">
-                      {nextMeeting.date} – {nextMeeting.time}
+                      {formatMeetingDate(nextMeeting)} – {formatMeetingTime(nextMeeting)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Số lượng: {nextMeeting.currentCount ?? 0}/{nextMeeting.maxCapacity && nextMeeting.maxCapacity > 0 ? nextMeeting.maxCapacity : 1}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge variant="outline">Scheduled</Badge>
+                    <Badge variant="outline">{nextMeeting.status}</Badge>
                     <Button onClick={() => onNavigate?.('meetings')}>Xem chi tiết</Button>
                   </div>
                 </div>
@@ -541,7 +576,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                     <span>Tutor: {meeting.tutorName}</span>
                     <span>•</span>
                     <span>
-                      {meeting.date} - {meeting.time}
+                      {formatMeetingDate(meeting)} - {formatMeetingTime(meeting)}
                     </span>
                   </div>
                 </div>

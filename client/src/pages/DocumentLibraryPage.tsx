@@ -51,13 +51,14 @@ export function DocumentLibraryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const { toast } = useToast();
-
-  const currentUserId = userId ?? 'demo-user';
+  // Require authenticated user; no mock user fallbacks
+  const currentUserId = userId;
 
   // Load all documents once on mount
   useEffect(() => {
     let mounted = true;
     const loadDocuments = async () => {
+      if (!currentUserId) return; // must be authenticated
       setLoading(true);
       setError(null);
       try {
@@ -80,7 +81,7 @@ export function DocumentLibraryPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [currentUserId]);
 
   // Filter documents based on role and access level
   const filteredDocuments = useMemo(() => {
@@ -160,6 +161,7 @@ export function DocumentLibraryPage() {
   }, [filteredDocuments]);
 
   const refreshMaterials = async () => {
+    if (!currentUserId) return;
     setLoading(true);
     setError(null);
     try {
@@ -174,6 +176,7 @@ export function DocumentLibraryPage() {
   };
 
   const handleDelete = async (document: Document) => {
+    if (!currentUserId) return;
     try {
       const success = await materialService.deleteMaterial(document.id, currentUserId);
       if (success) {
@@ -199,6 +202,7 @@ export function DocumentLibraryPage() {
   };
 
   const handleShare = async (document: Document) => {
+    if (!currentUserId) return;
     const success = await materialService.shareMaterial(document.id, currentUserId, 't1');
     toast({
       title: success ? 'Material Shared' : 'Share Failed',
@@ -282,6 +286,14 @@ export function DocumentLibraryPage() {
         );
     }
   };
+
+  if (!currentUserId) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        <p>Bạn cần đăng nhập SSO để truy cập tài liệu.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

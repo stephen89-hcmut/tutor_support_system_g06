@@ -32,42 +32,24 @@ public class AuthService : IAuthService
 
         var ssoId = ssoTicket.Trim();
 
-        // Try matching existing user by SSO ID first, then by email if ticket looks like one
+        // Only accept existing users; no mock creation
         var user = (await _unitOfWork.Users.FindAsync(u => u.SsoId == ssoId, cancellationToken)).FirstOrDefault();
-        user ??= ssoId.Contains('@')
-            ? (await _unitOfWork.Users.FindAsync(u => u.Email == ssoId, cancellationToken)).FirstOrDefault()
-            : null;
+        // Allow lookup by email if ticket is an email; still no auto-creation
+        if (user is null && ssoId.Contains('@'))
+        {
+            user = (await _unitOfWork.Users.FindAsync(u => u.Email == ssoId, cancellationToken)).FirstOrDefault();
+        }
 
         if (user is null)
         {
-            // Fallback: create a new user inferred from the ticket (student if ticket contains "student")
-            var email = ssoId.Contains('@')
-                ? ssoId
-                : ssoId.Contains("student", StringComparison.OrdinalIgnoreCase)
-                    ? $"{ssoId.ToLowerInvariant()}@student.hcmut.edu.vn"
-                    : $"{ssoId.ToLowerInvariant()}@hcmut.edu.vn";
-
-            var fullName = "Mock User";
-
-            user = new User
-            {
-                SsoId = ssoId,
-                Email = email,
-                FullName = fullName,
-                Role = InferRoleFromEmail(email),
-                IsActive = true
-            };
-            await _unitOfWork.Users.AddAsync(user, cancellationToken);
+            // Reject unknown SSO tickets
+            throw new InvalidOperationException("Ticket SSO không hợp lệ hoặc không tồn tại.");
         }
-        else
+
+        if (!user.IsActive)
         {
-            if (!user.IsActive)
-            {
-                throw new InvalidOperationException("Tài khoản bị khóa.");
-            }
+            throw new InvalidOperationException("Tài khoản bị khóa.");
         }
-
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var tokens = _tokenService.GenerateTokens(user);
         await _refreshTokenStore.StoreAsync(user.Id, tokens.RefreshToken, tokens.RefreshTokenExpiresAt, cancellationToken);

@@ -12,6 +12,7 @@ import { authService } from '@/application/services/authService';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import type { AuthSession } from '@/types/auth';
+import { clearSession } from '@/lib/authStorage';
 
 interface LoginPageProps {
   onLogin: (session: AuthSession) => void;
@@ -28,17 +29,23 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   // Check for auto-login on mount
   useEffect(() => {
     const session = authService.getSession();
-    if (session) {
-      setRole(session.role);
-      setUserId(session.userId);
-      setUserName(session.fullName);
-      setAccessToken(session.accessToken);
-      onLogin(session);
-      toast({
-        title: 'Đăng nhập tự động',
-        description: `Chào mừng, ${session.fullName}!`,
-      });
+    if (!session) return;
+
+    const isExpired = !session.accessTokenExpiresAt || new Date(session.accessTokenExpiresAt) <= new Date();
+    if (isExpired) {
+      clearSession();
+      return;
     }
+
+    setRole(session.role);
+    setUserId(session.userId);
+    setUserName(session.fullName);
+    setAccessToken(session.accessToken);
+    onLogin(session);
+    toast({
+      title: 'Đăng nhập tự động',
+      description: `Chào mừng, ${session.fullName}!`,
+    });
   }, [setRole, setUserId, setUserName, setAccessToken, onLogin, toast]);
 
   const handleSignIn = async () => {
@@ -68,6 +75,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         description: `Chào mừng, ${session.fullName}!`,
       });
     } catch (error: any) {
+      clearSession();
       setLoginError(error?.message || 'Không thể đăng nhập. Vui lòng kiểm tra SSO ID / Ticket.');
     } finally {
       setIsAuthenticating(false);

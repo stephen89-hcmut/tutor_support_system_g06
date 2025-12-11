@@ -33,6 +33,7 @@ import {
 } from '@mui/material';
 import { Calendar, Video, MapPin, User as UserIcon, Edit3, Play, Square, Plus } from 'lucide-react';
 import { meetingService } from '@/application/services/meetingService';
+import { meetingFeedbackService } from '@/application/services/meetingFeedbackService';
 import type { Meeting, MeetingStatus } from '@/domain/entities/meeting';
 import { useRole } from '@/contexts/RoleContext';
 
@@ -42,6 +43,9 @@ interface MeetingsPageProps {
 }
 
 const statusChipColor: Record<MeetingStatus, 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'> = {
+  Open: 'primary',
+  Full: 'secondary',
+  Confirmed: 'warning',
   Scheduled: 'warning',
   'In Progress': 'info',
   Completed: 'success',
@@ -50,6 +54,11 @@ const statusChipColor: Record<MeetingStatus, 'default' | 'primary' | 'secondary'
 
 const statusLabel = (status: MeetingStatus) => {
   switch (status) {
+    case 'Open':
+      return 'Open';
+    case 'Full':
+      return 'Full';
+    case 'Confirmed':
     case 'Scheduled':
       return 'Upcoming';
     case 'In Progress':
@@ -62,8 +71,39 @@ const statusLabel = (status: MeetingStatus) => {
   }
 };
 
+const getMeetingStart = (meeting: Meeting) => {
+  if (meeting.time) {
+    const parsed = new Date(meeting.time);
+    if (!isNaN(parsed.getTime())) return parsed;
+  }
+  if (meeting.date) {
+    const parsed = new Date(meeting.date);
+    if (!isNaN(parsed.getTime())) return parsed;
+  }
+  return null;
+};
+
+const formatMeetingDate = (meeting: Meeting) => {
+  const start = getMeetingStart(meeting);
+  return start ? start.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : meeting.date;
+};
+
+const formatMeetingTime = (meeting: Meeting) => {
+  const start = getMeetingStart(meeting);
+  return start ? start.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : meeting.time;
+};
+
+const isUpcomingMeeting = (meeting: Meeting) => {
+  if (meeting.status === 'Completed' || meeting.status === 'Cancelled') return false;
+  const upcomingStatuses: MeetingStatus[] = ['Scheduled', 'Confirmed', 'In Progress', 'Open', 'Full'];
+  const start = getMeetingStart(meeting);
+  const statusUpcoming = upcomingStatuses.includes(meeting.status);
+  if (!start) return statusUpcoming;
+  return statusUpcoming && start.getTime() >= Date.now() - 3 * 60 * 60 * 1000;
+};
+
 const canJoinNow = (meeting: Meeting) => {
-  const start = meeting.date && meeting.time ? new Date(`${meeting.date}T${meeting.time}`) : null;
+  const start = getMeetingStart(meeting);
   if (!start || isNaN(start.getTime())) return false;
   const now = new Date();
   const diffMinutes = (start.getTime() - now.getTime()) / (1000 * 60);
@@ -71,7 +111,7 @@ const canJoinNow = (meeting: Meeting) => {
 };
 
 const disableCancel = (meeting: Meeting) => {
-  const start = meeting.date && meeting.time ? new Date(`${meeting.date}T${meeting.time}`) : null;
+  const start = getMeetingStart(meeting);
   if (!start || isNaN(start.getTime())) return false;
   const now = new Date();
   const diffHours = (start.getTime() - now.getTime()) / (1000 * 60 * 60);
@@ -84,13 +124,13 @@ const MeetingStatusChip: React.FC<{ status: MeetingStatus }> = ({ status }) => (
 
 const MeetingCard: React.FC<{ meeting: Meeting; onJoin: (m: Meeting) => void; onCancel: (m: Meeting) => void; role: string }>
   = ({ meeting, onJoin, onCancel, role }) => {
-    const start = meeting.time ? new Date(meeting.time) : meeting.date ? new Date(meeting.date) : null;
-    const formattedDate = start ? start.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' }) : meeting.date;
-    const formattedTime = start ? start.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : meeting.time;
-    const joinEnabled = canJoinNow(meeting) && (meeting.status === 'Scheduled' || meeting.status === 'In Progress');
+    const formattedDate = formatMeetingDate(meeting);
+    const formattedTime = formatMeetingTime(meeting);
+    const joinEnabled = canJoinNow(meeting) && (meeting.status === 'Scheduled' || meeting.status === 'In Progress' || meeting.status === 'Confirmed');
     const cancelDisabled = disableCancel(meeting);
-    const occupancy = (meeting as any).currentCount ?? 0;
-    const capacity = (meeting as any).maxCapacity ?? 10;
+    const occupancy = meeting.currentCount ?? (meeting as any).currentCount ?? 0;
+    const capacity = meeting.maxCapacity ?? (meeting as any).maxCapacity ?? 10;
+    const safeCapacity = capacity > 0 ? capacity : 1;
 
     return (
       <Card variant="outlined" sx={{ height: '100%' }}>
@@ -114,9 +154,9 @@ const MeetingCard: React.FC<{ meeting: Meeting; onJoin: (m: Meeting) => void; on
           <Stack direction="row" spacing={1} alignItems="center">
             <Typography variant="caption">Group</Typography>
             <Box sx={{ flex: 1 }}>
-              <LinearProgress variant="determinate" value={Math.min(100, (occupancy / capacity) * 100)} />
+              <LinearProgress variant="determinate" value={Math.min(100, (occupancy / safeCapacity) * 100)} />
             </Box>
-            <Typography variant="caption">{occupancy}/{capacity}</Typography>
+            <Typography variant="caption">{occupancy}/{safeCapacity}</Typography>
           </Stack>
           <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
             <Button
@@ -144,14 +184,25 @@ const MeetingCard: React.FC<{ meeting: Meeting; onJoin: (m: Meeting) => void; on
 const RatingDialog: React.FC<{
   open: boolean;
   onClose: () => void;
-  onSubmit: (rating: number, comment: string) => void;
-}> = ({ open, onClose, onSubmit }) => {
+  meeting?: Meeting | null;
+  submitting?: boolean;
+  error?: string | null;
+  onSubmit: (rating: number, comment: string) => Promise<void>;
+}> = ({ open, onClose, meeting, submitting = false, error, onSubmit }) => {
   const [rating, setRating] = useState(4);
   const [comment, setComment] = useState('');
+  const canSubmit = rating >= 1 && rating <= 5 && comment.trim().length > 0 && !submitting;
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Rate Tutor</DialogTitle>
-      <DialogContent sx={{ pt: 1 }}>
+      <DialogContent sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {meeting && (
+          <Box sx={{ bgcolor: 'grey.100', p: 2, borderRadius: 1 }}>
+            <Typography variant="body2"><strong>Chủ đề:</strong> {meeting.topic}</Typography>
+            <Typography variant="body2"><strong>Tutor:</strong> {meeting.tutorName}</Typography>
+            <Typography variant="body2"><strong>Thời gian:</strong> {formatMeetingDate(meeting)} {formatMeetingTime(meeting)}</Typography>
+          </Box>
+        )}
         <Typography variant="body2" gutterBottom>Chọn sao (1-5)</Typography>
         <Slider value={rating} min={1} max={5} step={1} marks onChange={(_, v) => setRating(v as number)} />
         <TextField
@@ -163,10 +214,15 @@ const RatingDialog: React.FC<{
           value={comment}
           onChange={(e) => setComment(e.target.value)}
         />
+        {error && (
+          <Typography variant="body2" color="error">{error}</Typography>
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Hủy</Button>
-        <Button variant="contained" onClick={() => { onSubmit(rating, comment); onClose(); }}>Gửi</Button>
+        <Button variant="contained" disabled={!canSubmit} onClick={() => onSubmit(rating, comment)}>
+          {submitting ? 'Đang gửi...' : 'Gửi'}
+        </Button>
       </DialogActions>
     </Dialog>
   );
@@ -304,7 +360,7 @@ const TutorDetailDrawer: React.FC<{
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Box>
             <Typography variant="h6">{meeting.topic}</Typography>
-            <Typography variant="body2" color="text.secondary">{meeting.date} {meeting.time}</Typography>
+            <Typography variant="body2" color="text.secondary">{formatMeetingDate(meeting)} {formatMeetingTime(meeting)}</Typography>
           </Box>
           <MeetingStatusChip status={meeting.status} />
         </Stack>
@@ -348,71 +404,100 @@ const StudentSchedule: React.FC<{
   meetings: Meeting[];
   onJoin: (m: Meeting) => void;
   onCancel: (m: Meeting) => void;
-}> = ({ meetings, onJoin, onCancel }) => {
-  const upcoming = meetings.filter((m) => m.status !== 'Completed' && m.status !== 'Cancelled');
-  const history = meetings.filter((m) => m.status === 'Completed' || m.status === 'Cancelled');
+  onRateTutor: (meeting: Meeting, rating: number, comment: string) => Promise<void>;
+}> = ({ meetings, onJoin, onCancel, onRateTutor }) => {
+  const [tab, setTab] = useState<'upcoming' | 'history'>('upcoming');
+  const upcoming = meetings.filter((m) => isUpcomingMeeting(m));
+  const history = meetings.filter((m) => !isUpcomingMeeting(m));
   const [ratingTarget, setRatingTarget] = useState<Meeting | null>(null);
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleSubmitRating = async (rating: number, comment: string) => {
+    if (!ratingTarget) return;
+    setSubmittingRating(true);
+    setSubmitError(null);
+    try {
+      await onRateTutor(ratingTarget, rating, comment);
+      setRatingTarget(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không thể gửi đánh giá.';
+      setSubmitError(message);
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
 
   return (
     <Box>
-      <Tabs value="upcoming" aria-label="schedule-tabs" sx={{ minHeight: 0 }}>
+      <Tabs value={tab} onChange={(_, v) => setTab(v as 'upcoming' | 'history')} aria-label="schedule-tabs" sx={{ minHeight: 0 }}>
         <Tab label={`Upcoming (${upcoming.length})`} value="upcoming" />
-        <Tab label={`History (${history.length})`} value="history" disabled />
+        <Tab label={`History (${history.length})`} value="history" />
       </Tabs>
-      <Grid container spacing={2} sx={{ mt: 1 }}>
-        {upcoming.map((m) => (
-          <Grid item xs={12} md={6} lg={4} key={m.id}>
-            <MeetingCard meeting={m} onJoin={onJoin} onCancel={onCancel} role="Student" />
-          </Grid>
-        ))}
-        {upcoming.length === 0 && (
-          <Grid item xs={12}>
-            <Typography color="text.secondary">Không có buổi sắp tới.</Typography>
-          </Grid>
-        )}
-      </Grid>
 
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h6" gutterBottom>History</Typography>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Thời gian</TableCell>
-              <TableCell>Môn</TableCell>
-              <TableCell>Tutor</TableCell>
-              <TableCell>Trạng thái</TableCell>
-              <TableCell align="right">Hành động</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {history.map((m) => (
-              <TableRow key={m.id}>
-                <TableCell>{m.date} {m.time}</TableCell>
-                <TableCell>{m.topic}</TableCell>
-                <TableCell>{m.tutorName}</TableCell>
-                <TableCell><MeetingStatusChip status={m.status} /></TableCell>
-                <TableCell align="right">
-                  {m.status === 'Completed' && !m.studentRating && (
-                    <Button size="small" color="warning" onClick={() => setRatingTarget(m)}>Rate Tutor</Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-            {history.length === 0 && (
+      {tab === 'upcoming' && (
+        <Grid container spacing={2} sx={{ mt: 1 }}>
+          {upcoming.map((m) => (
+            <Grid item xs={12} md={6} lg={4} key={m.id}>
+              <MeetingCard meeting={m} onJoin={onJoin} onCancel={onCancel} role="Student" />
+            </Grid>
+          ))}
+          {upcoming.length === 0 && (
+            <Grid item xs={12}>
+              <Typography color="text.secondary">Không có buổi sắp tới.</Typography>
+            </Grid>
+          )}
+        </Grid>
+      )}
+
+      {tab === 'history' && (
+        <Box sx={{ mt: 2 }}>
+          <Table size="small">
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={5}>
-                  <Typography color="text.secondary">Chưa có lịch sử.</Typography>
-                </TableCell>
+                <TableCell>Thời gian</TableCell>
+                <TableCell>Môn</TableCell>
+                <TableCell>Tutor</TableCell>
+                <TableCell>Trạng thái</TableCell>
+                <TableCell align="right">Hành động</TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </Box>
+            </TableHead>
+            <TableBody>
+              {history.map((m) => (
+                <TableRow key={m.id}>
+                  <TableCell>{formatMeetingDate(m)} {formatMeetingTime(m)}</TableCell>
+                  <TableCell>{m.topic}</TableCell>
+                  <TableCell>{m.tutorName}</TableCell>
+                  <TableCell><MeetingStatusChip status={m.status} /></TableCell>
+                  <TableCell align="right">
+                    {m.status === 'Completed' && !m.studentRating && (
+                      <Button size="small" color="warning" onClick={() => setRatingTarget(m)}>Rate Tutor</Button>
+                    )}
+                    {m.studentRating && (
+                      <Chip label="Rated" color="success" size="small" />
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {history.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5}>
+                    <Typography color="text.secondary">Chưa có lịch sử.</Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </Box>
+      )}
 
       <RatingDialog
         open={!!ratingTarget}
+        meeting={ratingTarget}
+        submitting={submittingRating}
+        error={submitError}
         onClose={() => setRatingTarget(null)}
-        onSubmit={() => setRatingTarget(null)}
+        onSubmit={handleSubmitRating}
       />
     </Box>
   );
@@ -454,7 +539,7 @@ const TutorSchedule: React.FC<{
               <Card variant="outlined" onClick={() => handleOpenDetail(m)} sx={{ cursor: 'pointer' }}>
                 <CardHeader
                   title={m.topic}
-                  subheader={`${m.date} ${m.time}`}
+                  subheader={`${formatMeetingDate(m)} ${formatMeetingTime(m)}`}
                   action={<MeetingStatusChip status={m.status} />}
                 />
                 <CardContent>
@@ -465,9 +550,13 @@ const TutorSchedule: React.FC<{
                   <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
                     <Typography variant="caption">Group</Typography>
                     <Box sx={{ flex: 1 }}>
-                      <LinearProgress variant="determinate" value={Math.min(100, (((m as any).currentCount ?? 0) / ((m as any).maxCapacity ?? 10)) * 100)} />
+                      {(() => {
+                        const capacity = m.maxCapacity && m.maxCapacity > 0 ? m.maxCapacity : 1;
+                        const progress = Math.min(100, ((m.currentCount ?? 0) / capacity) * 100);
+                        return <LinearProgress variant="determinate" value={progress} />;
+                      })()}
                     </Box>
-                    <Typography variant="caption">{(m as any).currentCount ?? 0}/{(m as any).maxCapacity ?? 10}</Typography>
+                    <Typography variant="caption">{m.currentCount ?? 0}/{m.maxCapacity && m.maxCapacity > 0 ? m.maxCapacity : 1}</Typography>
                   </Stack>
                 </CardContent>
               </Card>
@@ -556,6 +645,59 @@ export function MeetingsPage({ onCancel, onBookNewMeeting }: MeetingsPageProps) 
     setMeetings((prev) => prev.map((x) => x.id === m.id ? { ...x, status: 'Completed' as MeetingStatus } : x));
   };
 
+  const handleRateTutor = async (meeting: Meeting, rating: number, comment: string) => {
+    if (!userId) throw new Error('Bạn cần đăng nhập để đánh giá');
+
+    if (meeting.studentRating) {
+      throw new Error('Bạn đã đánh giá buổi học này.');
+    }
+
+    const existing = await meetingFeedbackService.getFeedbackByMeeting(meeting.id);
+    if (existing) {
+      setMeetings((prev) => prev.map((m) =>
+        m.id === meeting.id
+          ? {
+              ...m,
+              studentRating: {
+                knowledge: existing.rating,
+                communication: existing.rating,
+                helpfulness: existing.rating,
+                punctuality: existing.rating,
+                comment: existing.comment,
+                submittedAt: existing.createdAt,
+              },
+            }
+          : m,
+      ));
+      throw new Error('Bạn đã đánh giá buổi học này.');
+    }
+
+    await meetingFeedbackService.submitFeedback({
+      meetingId: meeting.id,
+      studentId: userId,
+      tutorId: meeting.tutorId,
+      rating,
+      comment,
+    });
+
+    const submittedAt = new Date().toISOString();
+    setMeetings((prev) => prev.map((m) =>
+      m.id === meeting.id
+        ? {
+            ...m,
+            studentRating: {
+              knowledge: rating,
+              communication: rating,
+              helpfulness: rating,
+              punctuality: rating,
+              comment,
+              submittedAt,
+            },
+          }
+        : m,
+    ));
+  };
+
   const handleCreateSlot = (payload: any) => {
     const now = new Date();
     const id = `slot-${now.getTime()}`;
@@ -573,6 +715,8 @@ export function MeetingsPage({ onCancel, onBookNewMeeting }: MeetingsPageProps) 
       location: payload.mode === 'In-Person' ? payload.location : undefined,
       link: payload.mode !== 'In-Person' ? payload.link : undefined,
       status: 'Scheduled',
+      currentCount: 0,
+      maxCapacity: payload.capacity ?? 10,
     };
     setMeetings((prev) => [newMeeting, ...prev]);
   };
@@ -602,6 +746,7 @@ export function MeetingsPage({ onCancel, onBookNewMeeting }: MeetingsPageProps) 
           meetings={meetings}
           onJoin={handleJoin}
           onCancel={(m) => setCancelTarget(m)}
+          onRateTutor={handleRateTutor}
         />
       )}
 

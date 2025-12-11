@@ -1,4 +1,6 @@
 import type { MeetingFeedbackDto } from '@/domain/dtos/meetingFeedback';
+import { tutorApi } from '@/apis/tutor.api';
+import { authService } from './authService';
 
 interface StoredFeedback extends MeetingFeedbackDto {
   createdAt: string;
@@ -9,9 +11,29 @@ const feedbackStore: StoredFeedback[] = [];
 
 class MeetingFeedbackService {
   async submitFeedback(feedback: MeetingFeedbackDto): Promise<string> {
-    const id = `feedback-${Date.now()}`;
+    if (feedback.rating < 1 || feedback.rating > 5) {
+      throw new Error('Rating must be between 1 and 5');
+    }
+
+    const session = authService.getSession();
+    if (!session?.accessToken) {
+      throw new Error('Bạn cần đăng nhập để gửi đánh giá');
+    }
+
+    const response = await tutorApi.rateTutor(
+      {
+        meetingId: feedback.meetingId,
+        tutorId: feedback.tutorId,
+        rating: feedback.rating,
+        comment: feedback.comment,
+      },
+      session.accessToken,
+    );
+
+    const id = (response as any)?.id || `feedback-${Date.now()}`;
     const storedFeedback: StoredFeedback = {
       ...feedback,
+      studentId: feedback.studentId || session.userId,
       id,
       createdAt: new Date().toISOString(),
     };

@@ -18,12 +18,12 @@ import { DataSyncPage } from './pages/DataSyncPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { AIFeedbackAnalysisPage } from './pages/AIFeedbackAnalysisPage';
 import { FeedbackPage } from './pages/FeedbackPage';
-import { MyProgressPage } from './pages/MyProgressPage';
+import { StudentProgressPage } from './pages/StudentProgressPage';
 import { RecordProgressPage } from './pages/RecordProgressPage';
 import { RecordProgressPageNew } from './pages/RecordProgressPageNew';
 import { DashboardPage } from './pages/DashboardPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { FindTutorPage } from './pages/FindTutorPage';
+import { MeetingPage } from './pages/MeetingPage';
 import { StudentAnalyticsPage } from './pages/StudentAnalyticsPage';
 import { TutorStudentsPage } from './pages/TutorStudentsPage';
 import { meetingService } from '@/application/services/meetingService';
@@ -252,7 +252,7 @@ function App() {
       return <DocumentLibraryPage />;
     }
 
-    // Handle find tutor / book meeting screen (Student only - UCB1.1)
+    // Handle meeting discovery screen (Student only)
     if (currentScreen === 'find-tutor' || currentScreen === 'book-meeting') {
       if (role !== 'Student') {
         return (
@@ -270,7 +270,7 @@ function App() {
         );
       }
       return (
-        <FindTutorPage
+        <MeetingPage
           onViewTutorProfile={(tutorId) => {
             setCurrentStudentId(tutorId); // Reuse for tutor ID
             setPreviousScreen(currentScreen);
@@ -317,7 +317,7 @@ function App() {
 
     // Handle my progress screen
     if (currentScreen === 'my-progress') {
-      return <MyProgressPage />;
+      return <StudentProgressPage />;
     }
 
     // Handle settings screen (not available for Manager)
